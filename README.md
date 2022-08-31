@@ -1,13 +1,8 @@
 # UE5NoahFrame  Inherit Ketoo's  Will  For UE5
 
-- develop
-[![Build Status](https://travis-ci.org/ketoo/NoahGameFrame.svg?branch=develop)](https://travis-ci.org/ketoo/NoahGameFrame)
-- master
-[![Build Status](https://travis-ci.org/ketoo/NoahGameFrame.svg?branch=master)](https://travis-ci.org/ketoo/NoahGameFrame)
-- chat
-[![Join the chat at https://gitter.im/ketoo/NoahGameFrame](https://badges.gitter.im/ketoo/NoahGameFrame.svg)](https://gitter.im/ketoo/NoahGameFrame?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+Origin https://github.com/ketoo/NoahGameFrame.git
 
-#####QQ群：330241037 [![NF开源服务器引擎2群](https://pub.idqqimg.com/wpa/images/group.png)](https://shang.qq.com/wpa/qunwpa?idkey=17ce92a5aacdec7b1c5ef0ff99bc84ca39c927fbd4ec7a3a83449e96afa63899)
+
 
 ## Tutorial && Documents
 
