@@ -1,0 +1,1 @@
+/usr/bin/cc -O2 -g -DNDEBUG  -rdynamic CMakeFiles/bson-metrics.dir/examples/bson-metrics.c.o  -o bson-metrics  -Wl,-rpath,/home/gouzi/Desktop/NoahGameFrame/Dependencies/mongo-c-driver-1.19.0/build/src/libbson libbson-1.0.so.0.0.0 -lm 
