@@ -82,29 +82,29 @@ void NFKcp::listener_cb(const int sock, short int which, void *arg)  //server
         uint32_t conn = *(uint32_t*)buf;
         switch(conn)
         {
-            case KcpProtoType::SYN:
+            case NFKcp::KcpProtoType::SYN:
                 if(isize != 8)
                 {
                     break;
                 }
-                S_HandleAccept( &client_addr,(const char*)buf,isize);
+                nfkcp->S_HandleAccept( &client_addr,(const char*)buf,isize);
                 break;
-            case KcpProtoType::ACK:
+            case NFKcp::KcpProtoType::ACK:
                 if(isize != 12)
                 {
                     break;
                 }
-                S_HandleConnect( &client_addr,(const char*)buf,isize);
+                nfkcp->S_HandleConnect( &client_addr,(const char*)buf,isize);
                 break;
-            case KcpProtoType::PIN:
+            case NFKcp::KcpProtoType::PIN:
                 if(isize != 8)
                 {
                     break;
                 }
-                S_HandlePing(&client_addr,(const char*)buf,isize);
+                nfkcp->S_HandlePing(&client_addr,(const char*)buf,isize);
                 break;
             default:
-                S_HandleRecv(conn, &client_addr,(const char*)buf,isize);
+                nfkcp->S_HandleRecv(conn, &client_addr,(const char*)buf,isize);
                 break;
         }
         isize = 0;
@@ -141,21 +141,21 @@ void NFKcp::recvfrom_cb(const int sock, short int which, void *arg)  //client
         uint32_t conn = *(uint32_t*)buf;
         switch(conn)
         {
-            case KcpProtoType::SYN:
+            case NFKcp::KcpProtoType::SYN:
                 if(isize != 8)
                 {
                     break;
                 }
                 //S_HandleAccept((struct sockaddr *) &client_addr,(const char*)buf,isize);
                 break;
-            case KcpProtoType::ACK:
+            case NFKcp::KcpProtoType::ACK:
                 if(isize != 12)
                 {
                     break;
                 }
-                C_HandleConnect((const char*)buf,isize);
+                nfkcp->C_HandleConnect((const char*)buf,isize);
                 break;
-            case KcpProtoType::PIN:
+            case NFKcp::KcpProtoType::PIN:
                 if(isize != 8)
                 {
                     break;
@@ -163,7 +163,7 @@ void NFKcp::recvfrom_cb(const int sock, short int which, void *arg)  //client
                 //S_HandlePing((struct sockaddr *) &client_addr,(const char*)buf,isize);
                 break;
             default:
-                C_HandleRecv(conn,(const char*)buf,isize);
+                nfkcp->C_HandleRecv(conn,(const char*)buf,isize);
                 break;
         }
         isize = 0;
@@ -483,7 +483,7 @@ int NFKcp::InitServerNet()
 		printf("bind() success - [%u]\n", nPort);
 	}
 
-	event_set(mxEvent, sock_fd, EV_READ | EV_PERSIST, &listener_cb, this);
+	event_set(mxEvent, sock_fd, EV_READ | EV_PERSIST, listener_cb, this);
 	if (event_add(mxEvent, NULL) == -1)
 	{
 		printf("event_add() failed\n");
@@ -523,7 +523,7 @@ void NFKcp::CloseObject(const NFSOCK sockIndex)
 	auto it = mmObject.find(sockIndex);
     if (it != mmObject.end())
     {
-        NetObject* pObject = it->second;
+        KcpObject* pObject = it->second;
 
         struct bufferevent* bev = (bufferevent*)pObject->GetUserData();
 
@@ -663,7 +663,7 @@ void  NFKcp::S_HandleAccept(const sockaddr_in* remoteaddr,const char* data ,uint
         while (mmObject.find(newId)!=mmObject.end());
         pkcpObject = new KcpObject(newId,reqConn,*remoteaddr,this);
         reqkcpObject.insert(std::map<NFUINT32, KcpObject*>::value_type(reqConn, pkcpObject));
-        AddKcpObject(kcpObject->Id,pkcpObject);
+        AddKcpObject(pkcpObject->Id,pkcpObject);
         if(onAcceptObject)
         {
             onAcceptObject(pkcpObject);
@@ -696,7 +696,7 @@ void NFKcp::S_HandleRecv(const uint32_t& cid,const sockaddr_in* remoteaddr,const
     if (it != mmObject.end())
     {
         KcpObject* pkcpObject = it->second;
-        pkcpObject->S_HandleRecv();
+        pkcpObject->S_HandleRecv(remoteaddr,data,size);
     }
 }
 
@@ -706,16 +706,16 @@ void NFKcp::S_HandleRecv(const uint32_t& cid,const sockaddr_in* remoteaddr,const
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
-    addr.sin_addr.s_addr = inet_addr(ip);
+    addr.sin_addr.s_addr = inet_addr((char*)ip.data());
 
     uint32_t coonid = 0;
     bool bc = false;
     do{
         coonid = NFU32Random();
-        bc = reqkcpObject.find(coonid);
+        bc = reqkcpObject.find(coonid)!= reqkcpObject.end();
     }while(bc);
     KcpObject* kcpObject = new KcpObject(coonid,mSocketFd,addr);
-    reqkcpObject.insert(kcpObject->reqConn,kcpObject);
+    reqkcpObject.insert(std::map<NFUINT32, KcpObject*>::value_type(kcpObject->reqConn, kcpObject));
     return kcpObject;
  }
 

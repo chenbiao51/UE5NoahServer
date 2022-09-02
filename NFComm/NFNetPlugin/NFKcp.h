@@ -131,8 +131,14 @@ private:
 
     void log_cb(int severity, const char* msg);
     void event_fatal_cb(int err);
-    void listener_cb(const int sockfd, short int which, void *arg);
-    void recvfrom_cb(const int sockfd, short int which, void *arg);
+    static void listener_cb(const int sockfd, short int which, void *arg);
+    static void recvfrom_cb(const int sockfd, short int which, void *arg);
+
+    
+   
+protected:
+    int DeCode(const char* strData, const uint32_t ulen, NFMsgHead& xHead);
+    int EnCode(const uint16_t umsgID, const char* strData, const uint32_t unDataLen, std::string& strOutData);
 
     void S_HandleAccept(const sockaddr_in* remoteaddr,const char* data ,uint16_t& size);
     void S_HandleConnect(const sockaddr_in* remoteaddr,const char* data ,uint16_t& size);
@@ -143,10 +149,6 @@ private:
     void C_HandleConnect(const char* data,uint16_t& size);
     void C_HandleRecv(const uint32_t& kid,const char* data ,uint16_t& size);
 
-   
-protected:
-    int DeCode(const char* strData, const uint32_t ulen, NFMsgHead& xHead);
-    int EnCode(const uint16_t umsgID, const char* strData, const uint32_t unDataLen, std::string& strOutData);
 
 public:
     enum KcpProtoType

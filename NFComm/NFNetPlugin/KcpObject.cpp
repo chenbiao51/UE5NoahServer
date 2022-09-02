@@ -3,7 +3,7 @@
 
 #define TIMEOUTPERIOD 1000*60
 
-void KcpObject::KcpObject(uint32_t reqconn,NFSOCK sockfd,const sockaddr_in* remotesocket) //Client
+KcpObject::KcpObject(uint32_t reqconn,NFSOCK sockfd,const sockaddr_in remotesocket) //Client
 {
     this->mbServer = false;
     this->reqConn = reqconn;
@@ -12,7 +12,7 @@ void KcpObject::KcpObject(uint32_t reqconn,NFSOCK sockfd,const sockaddr_in* remo
     
 }
 
-void KcpObject::KcpObject(NFUINT32 newid,NFUINT32 reqconn,sockaddr_in remotesocket,NFKcp* nfkcp) //Server
+KcpObject::KcpObject(NFUINT32 newid,NFUINT32 reqconn,sockaddr_in remotesocket,NFKcp* nfkcp) //Server
 {
     this->mbServer = true;
     this->Id = newid;
@@ -25,9 +25,9 @@ void KcpObject::KcpObject(NFUINT32 newid,NFUINT32 reqconn,sockaddr_in remotesock
     ikcp_wndsize(mkcp,512,512);
     ikcp_setmtu(mkcp,1400);
     mkcp->output = [](const char* buf,int len,struct IKCPCB* kcp,void*  user)->int{
-        ((KcpObject*)user)->nfKcp->Send();
+        ((KcpObject*)user)->nfKcp->Send(((KcpObject*)user)->remoteEp,(char*)buf,len);
         return 0;
-    }
+    };
     this->lastPingTime = NFGetTimeMS();
     isConnected = true;
 }
@@ -38,12 +38,12 @@ void KcpObject::S_HandleAccept()
     memcpy(chacheBytes,(NFUINT8*)&ack,4);
     memcpy(chacheBytes+4,(NFUINT8*)&Id,4);
     memcpy(chacheBytes+8,(NFUINT8*)&reqConn,4);
-    nfKcp->Send();
+    nfKcp->Send(remoteEp,(char*)chacheBytes,12);
 }
 
 void KcpObject::S_HandleRecv(const sockaddr_in* premotesocket,const char* data,const NFUINT16& size)
 {
-    if(premotesocket->sin_addr.s_addr!=remoteSocket->sin_addr.s_addr&&premotesocket->sin_port!=remoteSocket->sin_port)
+    if(premotesocket->sin_addr.s_addr!=remoteEp.sin_addr.s_addr&&premotesocket->sin_port!=remoteEp.sin_port)
     {
         remoteEp = *premotesocket;
     }
@@ -64,7 +64,7 @@ void KcpObject::S_CheckPing(const IUINT32& nowTime)
 {
     if(nowTime-lastPingTime>TIMEOUTPERIOD)
     {
-        Disconnect();
+        S_Disconnect();
     }
 }
 
@@ -92,7 +92,7 @@ void KcpObject::S_Send(const char* data,const NFUINT16& size)
 
 void KcpObject::S_Disconnect()
 {
-    isConnected = fabs;
+    isConnected = false;
     if(mKcpOnDisconnectCB)
     {
         mKcpOnDisconnectCB();
@@ -166,6 +166,6 @@ bool KcpObject::Execute()
     return true;
 }
 
-void KcpObject::~KcpObject()
+KcpObject::~KcpObject()
 {
 }

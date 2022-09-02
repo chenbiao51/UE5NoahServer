@@ -33,7 +33,7 @@ public:
 private:
     /* data */
 public:
-    KcpObject(uint32_t reqConn,NFSOCK sockfd,const sockaddr_in* remotesocket);
+    KcpObject(uint32_t reqConn,NFSOCK sockfd,const sockaddr_in remotesocket);
     void C_HandleConnect(uint32_t& id);
     void C_HandleRecv(const char* data,const NFUINT16& size);
     void C_Update(const IUINT32& currenttime);
