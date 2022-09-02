@@ -42,6 +42,7 @@
 #include "NFComm/NFPluginModule/NFGUID.h"
 #include "NFINet.h"
 #include "ikcp.h"
+#include "KcpObject.h"
 #if NF_PLATFORM == NF_PLATFORM_WIN
 #include <WinSock2.h>
 #elif NF_PLATFORM == NF_PLATFORM_APPLE || NF_PLATFORM == NF_PLATFORM_LINUX || NF_PLATFORM == NF_PLATFORM_ANDROID
@@ -100,11 +101,11 @@ public:
     //send a message with out msg-head to all client[auto add msg-head in this function]
     virtual bool SendMsgToAllClientWithOutHead(const int16_t msgID, const char* msg, const size_t len) = 0;
 
-    virtual bool CloseKcpObject(const NFSOCK sockIndex) = 0;
+    virtual bool CloseKcpObject(const NFUINT32 sockIndex) = 0;
 
-    virtual KcpObject* GetKcpObject(const NFSOCK sockIndex) = 0;
+    virtual KcpObject* GetKcpObject(const NFUINT32 sockIndex) = 0;
 
-    virtual bool AddKcpObject(const NFSOCK sockIndex, KcpObject* pObject) = 0;
+    virtual bool AddKcpObject(const NFUINT32 sockIndex, KcpObject* pObject) = 0;
 
     virtual bool IsServer() = 0;
 

@@ -59,13 +59,6 @@ void NFKcp::event_fatal_cb(int err)
     //LOG(FATAL) << "event_fatal_cb " << err;
 
 }
-void NFKcp::conn_writecb(struct bufferevent* bev, void* user_data)
-{
-    
-    //  struct evbuffer *output = bufferevent_get_output(bev);
-}
-
-
 
 void NFKcp::listener_cb(const int sock, short int which, void *arg)  //server
 {
@@ -94,24 +87,24 @@ void NFKcp::listener_cb(const int sock, short int which, void *arg)  //server
                 {
                     break;
                 }
-                S_HandleAccept((struct sockaddr *) &client_addr,(const char*)buf,isize);
+                S_HandleAccept( &client_addr,(const char*)buf,isize);
                 break;
             case KcpProtoType::ACK:
                 if(isize != 12)
                 {
                     break;
                 }
-                S_HandleConnect((struct sockaddr *) &client_addr,(const char*)buf,isize);
+                S_HandleConnect( &client_addr,(const char*)buf,isize);
                 break;
             case KcpProtoType::PIN:
                 if(isize != 8)
                 {
                     break;
                 }
-                S_HandlePing((struct sockaddr *) &client_addr,(const char*)buf,isize)
+                S_HandlePing(&client_addr,(const char*)buf,isize);
                 break;
             default:
-                S_HandleRecv(conn,(struct sockaddr *) &client_addr,(const char*)buf,isize)
+                S_HandleRecv(conn, &client_addr,(const char*)buf,isize);
                 break;
         }
         isize = 0;
@@ -160,17 +153,17 @@ void NFKcp::recvfrom_cb(const int sock, short int which, void *arg)  //client
                 {
                     break;
                 }
-                C_HandleConnect((struct sockaddr *) &client_addr,(const char*)buf,isize);
+                C_HandleConnect((const char*)buf,isize);
                 break;
             case KcpProtoType::PIN:
                 if(isize != 8)
                 {
                     break;
                 }
-                //S_HandlePing((struct sockaddr *) &client_addr,(const char*)buf,isize)
+                //S_HandlePing((struct sockaddr *) &client_addr,(const char*)buf,isize);
                 break;
             default:
-                S_HandleRecv(conn,(struct sockaddr *) &client_addr,(const char*)buf,isize)
+                C_HandleRecv(conn,(const char*)buf,isize);
                 break;
         }
         isize = 0;
@@ -180,62 +173,7 @@ void NFKcp::recvfrom_cb(const int sock, short int which, void *arg)  //client
 
 
 
-void NFKcp::conn_readcb(struct bufferevent* bev, void* user_data)
-{
-    NetObject* pObject = (NetObject*)user_data;
-    if (!pObject)
-    {
-        return;
-    }
 
-    NFKcp* pNet = (NFKcp*)pObject->GetNet();
-    if (!pNet)
-    {
-        return;
-    }
-
-    if (pObject->NeedRemove())
-    {
-        return;
-	}
-
-    struct evbuffer* input = bufferevent_get_input(bev);
-    if (!input)
-    {
-        return;
-    }
-
-    size_t len = evbuffer_get_length(input);
-    unsigned char *pData = evbuffer_pullup(input, len);
-    pObject->AddBuff((const char *)pData, len);
-    evbuffer_drain(input, len);
-
-    if (pNet->mbTCPStream)
-    {
-        int len = pObject->GetBuffLen();
-        if (len > 0)
-        {
-            if (pNet->mRecvCB)
-            {
-                pNet->mRecvCB(pObject->GetRealFD(), -1, pObject->GetBuff(), len);
-
-                pNet->mnReceiveMsgTotal++;
-            }
-
-            pObject->RemoveBuff(0, len);
-        }
-    }
-    else
-    {
-        while (1)
-        {
-            if (!pNet->Dismantle(pObject))
-            {
-                break;
-            }
-        }
-    }
-}
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -380,12 +318,12 @@ bool NFKcp::SendMsg(const char* msg, const size_t len, const std::list<NFSOCK>& 
     return true;
 }
 
-bool NFKcp::CloseNetObject(const NFSOCK sockIndex)
+bool NFKcp::CloseKcpObject(const NFUINT32 sockIndex)
 {
 	auto it = mmObject.find(sockIndex);
     if (it != mmObject.end())
     {
-        NetObject* pObject = it->second;
+        KcpObject* pObject = it->second;
 
         pObject->SetNeedRemove(true);
         mvRemoveObject.push_back(sockIndex);
@@ -396,7 +334,7 @@ bool NFKcp::CloseNetObject(const NFSOCK sockIndex)
     return false;
 }
 
-bool NFKcp::Dismantle(NetObject* pObject)
+bool NFKcp::Dismantle(KcpObject* pObject)
 {
     bool bNeedDismantle = false;
 
@@ -569,7 +507,7 @@ bool NFKcp::CloseSocketAll()
     return true;
 }
 
-NetObject* NFKcp::GetNetObject(const NFSOCK sockIndex)
+KcpObject* NFKcp::GetKcpObject(const NFUINT32 sockIndex)
 {
 	auto it = mmObject.find(sockIndex);
     if (it != mmObject.end())

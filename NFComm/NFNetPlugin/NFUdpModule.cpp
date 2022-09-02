@@ -220,7 +220,7 @@ bool NFUdpModule::SendMsgPB(const uint16_t msgID, const std::string &strData, co
 	return true;
 }
 
-NFINet *NFUdpModule::GetNet()
+NFIUdp *NFUdpModule::GetUdp()
 {
 	return nullptr;
 }

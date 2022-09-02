@@ -104,9 +104,9 @@ public:
     virtual bool SendMsgToAllClientWithOutHead(const int16_t msgID, const char* msg, const size_t len) override ;
 
 
-    virtual bool CloseKcpObject(const NFSOCK sockIndex) override ;
-    virtual bool AddKcpObject(const NFSOCK sockIndex, KcpObject* pObject) override ;
-    virtual KcpObject* GetKcpObject(const NFSOCK sockIndex) override ;
+    virtual bool CloseKcpObject(const NFUINT32 sockIndex) override ;
+    virtual bool AddKcpObject(const NFUINT32 sockIndex, KcpObject* pObject) override ;
+    virtual KcpObject* GetKcpObject(const NFUINT32 sockIndex) override ;
 
     virtual bool IsServer() override ;
     virtual bool Log(int severity, const char* msg) override ;
@@ -129,10 +129,10 @@ private:
     void CloseObject(const NFSOCK sockIndex);
 
 
-    static void log_cb(int severity, const char* msg);
-    static void event_fatal_cb(int err);
-    static void listener_cb(const int sockfd, short int which, void *arg);
-    static void recvfrom_cb(const int sockfd, short int which, void *arg);
+    void log_cb(int severity, const char* msg);
+    void event_fatal_cb(int err);
+    void listener_cb(const int sockfd, short int which, void *arg);
+    void recvfrom_cb(const int sockfd, short int which, void *arg);
 
     void S_HandleAccept(const sockaddr_in* remoteaddr,const char* data ,uint16_t& size);
     void S_HandleConnect(const sockaddr_in* remoteaddr,const char* data ,uint16_t& size);
@@ -140,7 +140,7 @@ private:
     void S_HandleRecv(const uint32_t& conn,const sockaddr_in* remoteaddr,const char* data ,uint16_t& size);
 
     KcpObject* C_CreateKcpObject(std::string ip,int32_t port);
-    void C_HandleConnect(const char* data,uint16_t size);
+    void C_HandleConnect(const char* data,uint16_t& size);
     void C_HandleRecv(const uint32_t& kid,const char* data ,uint16_t& size);
 
    
