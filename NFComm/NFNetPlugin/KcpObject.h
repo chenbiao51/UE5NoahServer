@@ -15,12 +15,151 @@ typedef std::shared_ptr<KCP_ONDISCONNECT_FUNCTOR> KCP_ONDISCONNECT_FUNCTOR_PTR;
 
 class KcpObject
 {
+
     ikcpcb* mkcp;
     IUINT32 nextTimeCallUpdate = 0;
     NFUINT8 chacheBytes[12] = {0};
     NFUINT8 kcpReceive[1024*4] = {0};
 
     IUINT32 lastPingTime = 0;
+
+public:
+   int AddBuff(const char* str, size_t len)
+    {
+        ringBuff.append(str, len);
+
+        return (int) ringBuff.length();
+    }
+
+    int CopyBuffTo(char* str, uint32_t start, uint32_t len)
+    {
+        if (start + len > ringBuff.length())
+        {
+            return 0;
+        }
+
+        memcpy(str, ringBuff.data() + start, len);
+
+        return len;
+    }
+
+    int RemoveBuff(uint32_t start, uint32_t len)
+    {
+        if (start + len > ringBuff.length())
+        {
+            return 0;
+        }
+
+        ringBuff.erase(start, len);
+
+        return (int) ringBuff.length();
+    }
+
+    const char* GetBuff()
+    {
+        return ringBuff.data();
+    }
+
+    int GetBuffLen() const
+    {
+        return (int) ringBuff.length();
+    }
+
+    void* GetUserData()
+    {
+        return userData;
+    }
+
+    NFIKcp* GetKcp()
+    {
+        return nfKcp;
+    }
+
+    //////////////////////////////////////////////////////////////////////////
+    const std::string& GetSecurityKey() const
+    {
+        return securityKey;
+    }
+
+    void SetSecurityKey(const std::string& key)
+    {
+		securityKey = key;
+    }
+
+    int GetConnectKeyState() const
+    {
+        return logicState;
+    }
+
+    void SetConnectKeyState(const int state)
+    {
+		logicState = state;
+    }
+
+    bool NeedRemove()
+    {
+        return bNeedRemove;
+    }
+
+    void SetNeedRemove(bool b)
+    {
+        bNeedRemove = b;
+    }
+
+    const std::string& GetAccount() const
+    {
+        return account;
+    }
+
+    void SetAccount(const std::string& data)
+    {
+		account = data;
+    }
+
+    int GetGameID() const
+    {
+        return gameID;
+    }
+
+    void SetGameID(const int nData)
+    {
+		gameID = nData;
+    }
+
+    const NFGUID& GetUserID()
+    {
+        return userID;
+    }
+
+    void SetUserID(const NFGUID& nUserID)
+    {
+		userID = nUserID;
+    }
+
+    const NFGUID& GetClientID()
+    {
+        return clientID;
+    }
+
+    void SetClientID(const NFGUID& xClientID)
+    {
+		clientID = xClientID;
+    }
+
+    const NFGUID& GetHashIdentID()
+		{
+        return hashIdentID;
+    }
+
+    void SetHashIdentID(const NFGUID& xHashIdentID)
+    {
+		hashIdentID = xHashIdentID;
+    }
+
+    NFSOCK GetRealFD()
+    {
+        return mSocketFd;
+    }  
     
 public:
    bool mbServer;     //Is a Server or Client
@@ -31,7 +170,22 @@ public:
    sockaddr_in remoteEp;
    NFSOCK mSocketFd;
 private:
-    /* data */
+    //sockaddr_in sin;
+    void* userData;
+    //ringbuff
+    std::string ringBuff;
+    std::string account;
+    std::string securityKey;
+
+    int32_t logicState;
+    int32_t gameID;
+    NFGUID userID;//player id
+    NFGUID clientID;//temporary client id
+    NFGUID hashIdentID;//hash ident, special for distributed
+    //NFIUdp* udpObject;
+    //
+    //NFSOCK fd;
+    bool bNeedRemove;
 public:
     KcpObject(uint32_t reqConn,NFSOCK sockfd,const sockaddr_in remotesocket);
     void C_HandleConnect(uint32_t& id);

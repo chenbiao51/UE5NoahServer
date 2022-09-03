@@ -228,11 +228,7 @@ bool NFKcp::Final()
 
     CloseSocketAll();
 
-    if (listener)
-    {
-        evconnlistener_free(listener);
-        listener = NULL;
-    }
+
 
     if (mxBase)
     {
@@ -325,8 +321,7 @@ bool NFKcp::CloseKcpObject(const NFUINT32 sockIndex)
     {
         KcpObject* pObject = it->second;
 
-        pObject->SetNeedRemove(true);
-        mvRemoveObject.push_back(sockIndex);
+
 
         return true;
     }
@@ -496,8 +491,7 @@ bool NFKcp::CloseSocketAll()
 	auto it = mmObject.begin();
     for (; it != mmObject.end(); ++it)
     {
-		NFSOCK nFD = it->first;
-        mvRemoveObject.push_back(nFD);
+
     }
 
     ExecuteClose();
@@ -538,13 +532,13 @@ void NFKcp::CloseObject(const NFSOCK sockIndex)
 
 void NFKcp::ExecuteClose()
 {
-    for (int i = 0; i < mvRemoveObject.size(); ++i)
-    {
-		NFSOCK nSocketIndex = mvRemoveObject[i];
-        CloseObject(nSocketIndex);
-    }
+    // for (int i = 0; i < mvRemoveObject.size(); ++i)
+    // {
+	// 	NFSOCK nSocketIndex = mvRemoveObject[i];
+    //     CloseObject(nSocketIndex);
+    // }
 
-    mvRemoveObject.clear();
+    //mvRemoveObject.clear();
 }
 
 void NFKcp::log_cb(int severity, const char* msg)

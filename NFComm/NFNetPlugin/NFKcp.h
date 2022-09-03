@@ -43,7 +43,9 @@
 
 #pragma pack(push, 1)
 
-typedef std::function<void(KcpObject* kobject)> KCP_ACCEPT_OBJECT;
+class  NFKcp;
+
+
 
 class NFKcp : public NFIKcp
 {
@@ -158,14 +160,14 @@ public:
         FIN = 3,
         PIN = 4,
     };
-private:
+
     bool mbServer;     //Is a Server or Client
     NFSOCK mSocketFd;
 
     NFUINT32 IdGenerater = 1000000;       
     std::map<NFUINT32, KcpObject*> mmObject;
     std::map<NFUINT32, KcpObject*> reqkcpObject;   //
-    std::vector<NFSOCK> mvRemoveObject;
+    //std::vector<NFSOCK> mvRemoveObject;
 
     
     int mnMaxConnect;
@@ -183,10 +185,12 @@ private:
     int64_t mnReceiveMsgTotal;
 
     struct event_base* mxBase;
-    struct event mxEvent;
+    struct event* mxEvent;
     //////////////////////////////////////////////////////////////////////////
 
+    //std::function<void(const KcpObject* kobject)> onAcceptObject;
     KCP_ACCEPT_OBJECT onAcceptObject;
+    std::function<void()> onDisconnect;
 
     NET_RECEIVE_FUNCTOR mRecvCB;
     NET_EVENT_FUNCTOR mEventCB;

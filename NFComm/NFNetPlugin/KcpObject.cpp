@@ -98,10 +98,24 @@ void KcpObject::S_Disconnect()
         mKcpOnDisconnectCB();
     }
 
-    NFKcp **kc = nfKcp->;
+    KcpObject **kc = nfKcp->reqkcpObject.find(reqConn)->second;
     if(kc)
     {
+        if(*kc == this)
+        {
+            nfKcp->reqkcpObject.erase(reqConn);
+        }
+    }
 
+    nfKcp->mmObject.erase(Id);
+    kc = nfKcp->mmObject.find(Id)->second;
+    if(kc)
+    {
+        if(*kc)
+        {
+            delete* kc;
+
+        }
     }
     
 }

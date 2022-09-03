@@ -68,7 +68,7 @@
 #pragma pack(push, 1)
 
 class NFIKcp;
-
+typedef std::function<void(const KcpObject* kobject)> KCP_ACCEPT_OBJECT;
 
 class NFIKcp
 {
