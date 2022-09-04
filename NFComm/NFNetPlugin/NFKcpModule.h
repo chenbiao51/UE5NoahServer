@@ -92,8 +92,8 @@ protected:
 private:
     NFIKcp* m_pKcp;
 
-	struct event_base* mxBase = nullptr;
-	struct event udp_event;
+	// struct event_base* mxBase = nullptr;
+	// struct event udp_event;
 	unsigned int mnBufferSize;
 	std::map<int, std::list<NET_RECEIVE_FUNCTOR_PTR>> mxReceiveCallBack;
 	std::list<NET_EVENT_FUNCTOR_PTR> mxEventCallBackList;

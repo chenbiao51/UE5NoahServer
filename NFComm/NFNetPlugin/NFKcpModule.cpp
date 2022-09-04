@@ -123,12 +123,12 @@ bool NFKcpModule::AfterInit()
 int NFKcpModule::Initialization(const unsigned int nMaxClient, const unsigned short nPort, const int nCpuCount)
 {
 	/* Init. event */
-	mxBase = event_init();
-	if (mxBase == NULL)
-	{
-		printf("event_init() failed\n");
-		return -1;
-	}
+	// mxBase = event_init();
+	// if (mxBase == NULL)
+	// {
+	// 	printf("event_init() failed\n");
+	// 	return -1;
+	// }
 
 	/* Bind socket */
 	// if (bind_socket(&udp_event, nPort, this) != 0)
@@ -167,10 +167,10 @@ bool NFKcpModule::AddEventCallBack(const NET_EVENT_FUNCTOR_PTR &cb)
 
 bool NFKcpModule::Execute()
 {
-	if (mxBase)
-	{
-		event_base_loop(mxBase, EVLOOP_ONCE | EVLOOP_NONBLOCK);
-	}
+	// if (mxBase)
+	// {
+	// 	event_base_loop(mxBase, EVLOOP_ONCE | EVLOOP_NONBLOCK);
+	// }
 
 	return true;
 }

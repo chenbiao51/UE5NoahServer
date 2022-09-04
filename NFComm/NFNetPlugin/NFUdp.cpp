@@ -120,10 +120,8 @@ bool NFUdp::Execute()
 }
 
 
-void NFUdp::Initialization(const char* ip, const unsigned short nPort)
+void NFUdp::Initialization()
 {
-    mstrIP = ip;
-    mnPort = nPort;
     mbServer = false;
     InitClientNet();
 }

@@ -67,7 +67,7 @@ public:
     }
 
     template<typename BaseType>
-    NFUdp(BaseType* pBaseType, void (BaseType::*handleReceive)(const NFSOCK, const int, const char*, const uint32_t), void (BaseType::*handleEvent)(const NFSOCK, const NF_NET_EVENT, NFINet*), bool tcpStream = false)
+    NFUdp(BaseType* pBaseType, void (BaseType::*handleReceive)(const NFSOCK, const int, const char*, const uint32_t), void (BaseType::*handleEvent)(const NFSOCK, const NF_NET_EVENT, NFIUdp*), bool tcpStream = false)
     {
         mxBase = NULL;
 
@@ -91,7 +91,7 @@ public:
 public:
     virtual bool Execute() override ;
 
-    virtual void Initialization(const char* ip, const unsigned short nPort) override ;
+    virtual void Initialization() override ;
     virtual int Initialization(const unsigned int nMaxClient, const unsigned short nPort, const int nCpuCount = 4) override ;
 	virtual unsigned int ExpandBufferSize(const unsigned int size) override;
 

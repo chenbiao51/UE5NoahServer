@@ -49,7 +49,7 @@ public:
 	virtual bool AfterInit();
 
 	//as client
-	virtual void Initialization(const char* ip, const unsigned short nPort) {};
+	virtual void Initialization() {};
 
 	//as server
 	virtual int Initialization(const unsigned int nMaxClient, const unsigned short nPort, const int nCpuCount = 4);
@@ -89,8 +89,8 @@ protected:
 
 
 private:
-	struct event_base* mxBase = nullptr;
-	struct event udp_event;
+	NFIUdp* m_pUdp;
+
 	unsigned int mnBufferSize;
 	std::map<int, std::list<NET_RECEIVE_FUNCTOR_PTR>> mxReceiveCallBack;
 	std::list<NET_EVENT_FUNCTOR_PTR> mxEventCallBackList;
