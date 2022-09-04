@@ -655,7 +655,7 @@ void  NFKcp::S_HandleAccept(const sockaddr_in* remoteaddr,const char* data ,uint
             newId = IdGenerater++;
         }
         while (mmObject.find(newId)!=mmObject.end());
-        pkcpObject = new KcpObject(newId,reqConn,*remoteaddr,this);
+        pkcpObject = new KcpObject(newId,reqConn,*remoteaddr, this );
         reqkcpObject.insert(std::map<NFUINT32, KcpObject*>::value_type(reqConn, pkcpObject));
         AddKcpObject(pkcpObject->Id,pkcpObject);
         if(onAcceptObject)

@@ -29,6 +29,7 @@
 #include <set>
 #include <algorithm>
 #include <thread>
+#include <event.h>
 #include <event2/bufferevent.h>
 #include <event2/buffer.h>
 #include <event2/listener.h>
@@ -45,7 +46,7 @@
 
 class  NFKcp;
 
-
+//typedef std::function<void(const KcpObject* kobject)> KCP_ACCEPT_OBJECT;
 
 class NFKcp : public NFIKcp
 {
@@ -188,8 +189,8 @@ public:
     struct event* mxEvent;
     //////////////////////////////////////////////////////////////////////////
 
-    //std::function<void(const KcpObject* kobject)> onAcceptObject;
-    KCP_ACCEPT_OBJECT onAcceptObject;
+    std::function<void(const KcpObject* kobject)> onAcceptObject;
+    //KCP_ACCEPT_OBJECT onAcceptObject;
     std::function<void()> onDisconnect;
 
     NET_RECEIVE_FUNCTOR mRecvCB;
@@ -197,17 +198,17 @@ public:
 
     //1: async thread to process net event & msg and main thread to process logic business(decode binary data to message object)
     //2: pass a functor when startup net module to decode binary data to message object with async thread
-    struct NetEvent
-	{
-		NF_NET_EVENT event;
-		int fd = 0;
-		//std::string* data;
-		char* data = nullptr;
-		int len = 0;
+    // struct NetEvent
+	// {
+	// 	NF_NET_EVENT event;
+	// 	int fd = 0;
+	// 	//std::string* data;
+	// 	char* data = nullptr;
+	// 	int len = 0;
 
-		void* dataObject = nullptr;
-	};
-	moodycamel::ConcurrentQueue<NetEvent> msgQueue;
+	// 	void* dataObject = nullptr;
+	// };
+	// moodycamel::ConcurrentQueue<NetEvent> msgQueue;
     //////////////////////////////////////////////////////////////////////////
 };
 

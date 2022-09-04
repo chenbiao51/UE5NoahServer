@@ -42,7 +42,7 @@
 #include "NFComm/NFPluginModule/NFGUID.h"
 #include "NFINet.h"
 #include "ikcp.h"
-#include "KcpObject.h"
+#include "NFComm/NFNetPlugin/KcpObject.h"
 #if NF_PLATFORM == NF_PLATFORM_WIN
 #include <WinSock2.h>
 #elif NF_PLATFORM == NF_PLATFORM_APPLE || NF_PLATFORM == NF_PLATFORM_LINUX || NF_PLATFORM == NF_PLATFORM_ANDROID
@@ -68,7 +68,8 @@
 #pragma pack(push, 1)
 
 class NFIKcp;
-typedef std::function<void(const KcpObject* kobject)> KCP_ACCEPT_OBJECT;
+class KcpObject;
+//typedef std::function<void(const KcpObject* kobject)> KCP_ACCEPT_OBJECT;
 
 class NFIKcp
 {

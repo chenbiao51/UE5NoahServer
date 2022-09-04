@@ -82,22 +82,22 @@
     }
 
 //////////////////////////////////////////////////////////////////////////
-struct ServerData
-{
-    ServerData()
-    {
-        pData = NF_SHARE_PTR<NFMsg::ServerInfoReport>(NF_NEW NFMsg::ServerInfoReport());
-        nFD = 0;
-    }
-    ~ServerData()
-    {
-        nFD = 0;
-        pData = NULL;
-    }
+// struct ServerData
+// {
+//     ServerData()
+//     {
+//         pData = NF_SHARE_PTR<NFMsg::ServerInfoReport>(NF_NEW NFMsg::ServerInfoReport());
+//         nFD = 0;
+//     }
+//     ~ServerData()
+//     {
+//         nFD = 0;
+//         pData = NULL;
+//     }
 
-	NFSOCK nFD;
-    NF_SHARE_PTR<NFMsg::ServerInfoReport> pData;
-};
+// 	NFSOCK nFD;
+//     NF_SHARE_PTR<NFMsg::ServerInfoReport> pData;
+// };
 
 class NFIUdpModule : public NFIModule
 {

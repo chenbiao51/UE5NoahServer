@@ -3,34 +3,34 @@
 
 #define TIMEOUTPERIOD 1000*60
 
-KcpObject::KcpObject(uint32_t reqconn,NFSOCK sockfd,const sockaddr_in remotesocket) //Client
-{
-    this->mbServer = false;
-    this->reqConn = reqconn;
-    this->mSocketFd = sockfd;
-    this->remoteEp = remotesocket;
+// KcpObject::KcpObject(uint32_t reqconn,NFSOCK sockfd,const sockaddr_in remotesocket) //Client
+// {
+//     this->mbServer = false;
+//     this->reqConn = reqconn;
+//     this->mSocketFd = sockfd;
+//     this->remoteEp = remotesocket;
     
-}
+// }
 
-KcpObject::KcpObject(NFUINT32 newid,NFUINT32 reqconn,sockaddr_in remotesocket,NFKcp* nfkcp) //Server
-{
-    this->mbServer = true;
-    this->Id = newid;
-    this->reqConn = reqconn;
-    this->remoteEp = remotesocket;
-    this->nfKcp = nfkcp;
+// KcpObject::KcpObject(NFUINT32 newid,NFUINT32 reqconn,sockaddr_in remotesocket,NFKcp* nfkcp) //Server
+// {
+//     this->mbServer = true;
+//     this->Id = newid;
+//     this->reqConn = reqconn;
+//     this->remoteEp = remotesocket;
+//     this->nfKcp = nfkcp;
 
-    mkcp = ikcp_create(newid ,(void*)this);
-    ikcp_nodelay(mkcp,1,10,2,1);
-    ikcp_wndsize(mkcp,512,512);
-    ikcp_setmtu(mkcp,1400);
-    mkcp->output = [](const char* buf,int len,struct IKCPCB* kcp,void*  user)->int{
-        ((KcpObject*)user)->nfKcp->Send(((KcpObject*)user)->remoteEp,(char*)buf,len);
-        return 0;
-    };
-    this->lastPingTime = NFGetTimeMS();
-    isConnected = true;
-}
+//     mkcp = ikcp_create(newid ,(void*)this);
+//     ikcp_nodelay(mkcp,1,10,2,1);
+//     ikcp_wndsize(mkcp,512,512);
+//     ikcp_setmtu(mkcp,1400);
+//     mkcp->output = [](const char* buf,int len,struct IKCPCB* kcp,void*  user)->int{
+//         ((KcpObject*)user)->nfKcp->Send(((KcpObject*)user)->remoteEp,(char*)buf,len);
+//         return 0;
+//     };
+//     this->lastPingTime = NFGetTimeMS();
+//     isConnected = true;
+// }
 
 void KcpObject::S_HandleAccept()
 {
@@ -98,10 +98,10 @@ void KcpObject::S_Disconnect()
         mKcpOnDisconnectCB();
     }
 
-    KcpObject **kc = nfKcp->reqkcpObject.find(reqConn)->second;
+    KcpObject *kc = nfKcp->reqkcpObject.find(reqConn)->second;
     if(kc)
     {
-        if(*kc == this)
+        if(kc == this)
         {
             nfKcp->reqkcpObject.erase(reqConn);
         }
@@ -111,9 +111,9 @@ void KcpObject::S_Disconnect()
     kc = nfKcp->mmObject.find(Id)->second;
     if(kc)
     {
-        if(*kc)
+        if(kc)
         {
-            delete* kc;
+            delete kc;
 
         }
     }

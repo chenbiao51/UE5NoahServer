@@ -311,8 +311,8 @@ int NFUdp::InitClientNet()
 
 
 
-	event_set(mxEvent, sock_fd, EV_READ | EV_PERSIST, &recvfrom_cb, this);
-	if (event_add(mxEvent, NULL) == -1)
+	event_set(&mxEvent, sock_fd, EV_READ | EV_PERSIST, &recvfrom_cb, this);
+	if (event_add(&mxEvent, NULL) == -1)
 	{
 		printf("event_add() failed\n");
 	}
@@ -365,8 +365,8 @@ int NFUdp::InitServerNet()
 		printf("bind() success - [%u]\n", nPort);
 	}
 
-	event_set(mxEvent, sock_fd, EV_READ | EV_PERSIST, &listener_cb, this);
-	if (event_add(mxEvent, NULL) == -1)
+	event_set(&mxEvent, sock_fd, EV_READ | EV_PERSIST, &listener_cb, this);
+	if (event_add(&mxEvent, NULL) == -1)
 	{
 		printf("event_add() failed\n");
 	}
