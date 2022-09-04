@@ -85,13 +85,13 @@ void NFUdp::listener_cb(const int sock, short int which, void *arg)
 
 void NFUdp::recvfrom_cb(const int sock, short int which, void *arg)
 {
-    NetObject* pObject = (NetObject*)user_data;
+    UdpObject* pObject = (UdpObject*)arg;
     if (!pObject)
     {
         return;
     }
 
-    NFUdp* pNet = (NFUdp*)pObject->GetNet();
+    NFUdp* pNet = (NFUdp*)pObject->GetUdp();
     if (!pNet)
     {
         return;
@@ -102,42 +102,7 @@ void NFUdp::recvfrom_cb(const int sock, short int which, void *arg)
         return;
 	}
 
-    struct evbuffer* input = bufferevent_get_input(bev);
-    if (!input)
-    {
-        return;
-    }
-
-    size_t len = evbuffer_get_length(input);
-    unsigned char *pData = evbuffer_pullup(input, len);
-    pObject->AddBuff((const char *)pData, len);
-    evbuffer_drain(input, len);
-
-    if (pNet->mbTCPStream)
-    {
-        int len = pObject->GetBuffLen();
-        if (len > 0)
-        {
-            if (pNet->mRecvCB)
-            {
-                pNet->mRecvCB(pObject->GetRealFD(), -1, pObject->GetBuff(), len);
-
-                pNet->mnReceiveMsgTotal++;
-            }
-
-            pObject->RemoveBuff(0, len);
-        }
-    }
-    else
-    {
-        while (1)
-        {
-            if (!pNet->Dismantle(pObject))
-            {
-                break;
-            }
-        }
-    }
+    
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -184,7 +149,7 @@ unsigned int NFUdp::ExpandBufferSize(const unsigned int size)
 bool NFUdp::Final()
 {
 
-    CloseSocketAll();
+
 
     if (mxBase)
     {
@@ -209,22 +174,36 @@ bool NFUdp::SendMsg(const char* msg, const size_t len, const NFSOCK sockIndex)
 		return false;
 	}
 
-	auto it = mmObject.find(sockIndex);
-    if (it != mmObject.end())
-    {
-        NetObject* pNetObject = (NetObject*)it->second;
-        if (pNetObject)
-        {
-            bufferevent* bev = (bufferevent*)pNetObject->GetUserData();
-            if (NULL != bev)
-            {
-                bufferevent_write(bev, msg, len);
 
-                mnSendMsgTotal++;
-                return true;
-            }
-        }
-    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     return false;
 }
@@ -397,13 +376,7 @@ int NFUdp::InitServerNet()
 
 void NFUdp::ExecuteClose()
 {
-    for (int i = 0; i < mvRemoveObject.size(); ++i)
-    {
-		NFSOCK nSocketIndex = mvRemoveObject[i];
-        CloseObject(nSocketIndex);
-    }
-
-    mvRemoveObject.clear();
+  
 }
 
 void NFUdp::log_cb(int severity, const char* msg)

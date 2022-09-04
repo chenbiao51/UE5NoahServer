@@ -85,7 +85,7 @@ public:
 protected:
 	void OnReceiveNetPack(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len);
 
-	void OnSocketNetEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFINet* pNet);
+	void OnSocketNetEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIUdp* pUdp);
 
 
 private:

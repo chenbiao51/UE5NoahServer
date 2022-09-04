@@ -230,7 +230,7 @@ void NFUdpModule::OnReceiveNetPack(const NFSOCK sockIndex, const int msgID, cons
 
 }
 
-void NFUdpModule::OnSocketNetEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFINet *pNet)
+void NFUdpModule::OnSocketNetEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIUdp *pUdp)
 {
 
 }
