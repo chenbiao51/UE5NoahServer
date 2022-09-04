@@ -175,8 +175,8 @@ public:
 	template<typename BaseType>
 	bool AddEventCallBack(BaseType* pBase, void (BaseType::*handler)(const NFSOCK, const NF_NET_EVENT, NFIUdp*))
 	{
-		NET_EVENT_FUNCTOR functor = std::bind(handler, pBase, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-		NET_EVENT_FUNCTOR_PTR functorPtr(new NET_EVENT_FUNCTOR(functor));
+		UDP_EVENT_FUNCTOR functor = std::bind(handler, pBase, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+		UDP_EVENT_FUNCTOR_PTR functorPtr(new UDP_EVENT_FUNCTOR(functor));
 
 		return AddEventCallBack(functorPtr);
 	}
@@ -270,7 +270,7 @@ public:
 
 	virtual bool AddReceiveCallBack(const NET_RECEIVE_FUNCTOR_PTR& cb) = 0;
 
-	virtual bool AddEventCallBack(const NET_EVENT_FUNCTOR_PTR& cb) = 0;
+	virtual bool AddEventCallBack(const UDP_EVENT_FUNCTOR_PTR& cb) = 0;
 
 	virtual bool Execute() = 0;
 

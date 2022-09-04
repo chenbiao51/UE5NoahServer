@@ -135,7 +135,7 @@ int NFUdpModule::Initialization(const unsigned int nMaxClient, const unsigned sh
     m_pUdp->ExpandBufferSize(mnBufferSize);
     return m_pUdp->Initialization(nMaxClient, nPort, nCpuCount);
 
-	return 0;
+	
 }
 
 unsigned int NFUdpModule::ExpandBufferSize(const unsigned int size)
@@ -158,7 +158,7 @@ bool NFUdpModule::AddReceiveCallBack(const NET_RECEIVE_FUNCTOR_PTR &cb)
 	return true;
 }
 
-bool NFUdpModule::AddEventCallBack(const NET_EVENT_FUNCTOR_PTR &cb)
+bool NFUdpModule::AddEventCallBack(const UDP_EVENT_FUNCTOR_PTR &cb)
 {
 	return true;
 }

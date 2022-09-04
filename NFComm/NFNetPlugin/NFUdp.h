@@ -152,7 +152,7 @@ private:
     //////////////////////////////////////////////////////////////////////////
 
     NET_RECEIVE_FUNCTOR mRecvCB;
-    NET_EVENT_FUNCTOR mEventCB;
+    UDP_EVENT_FUNCTOR mEventCB;
 
     //1: async thread to process net event & msg and main thread to process logic business(decode binary data to message object)
     //2: pass a functor when startup net module to decode binary data to message object with async thread

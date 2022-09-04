@@ -40,6 +40,7 @@
 #include <vector>
 #include <cassert>
 #include "NFComm/NFPluginModule/NFGUID.h"
+#include "NFComm/NFNetPlugin/NFINet.h"
 
 #if NF_PLATFORM == NF_PLATFORM_WIN
 #include <WinSock2.h>
@@ -66,6 +67,9 @@
 #pragma pack(push, 1)
 
 class NFIUdp;
+
+typedef std::function<void(const NFSOCK sockIndex, const NF_NET_EVENT nEvent, NFIUdp* pUdp)> UDP_EVENT_FUNCTOR;
+typedef std::shared_ptr<UDP_EVENT_FUNCTOR> UDP_EVENT_FUNCTOR_PTR;
 
 class UdpObject
 {

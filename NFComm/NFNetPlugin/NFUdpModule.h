@@ -35,6 +35,7 @@
 #include <event2/thread.h>
 #include <event2/event_compat.h>
 #include "NFNetModule.h"
+#include "NFComm/NFNetPlugin/NFINet.h"
 #include "NFComm/NFPluginModule/NFIUdpModule.h"
 
 
@@ -49,10 +50,10 @@ public:
 	virtual bool AfterInit();
 
 	//as client
-	virtual void Initialization() {};
+	virtual void Initialization() override;
 
 	//as server
-	virtual int Initialization(const unsigned int nMaxClient, const unsigned short nPort, const int nCpuCount = 4);
+	virtual int Initialization(const unsigned int nMaxClient, const unsigned short nPort, const int nCpuCount = 4) override;
 
 	virtual unsigned int ExpandBufferSize(const unsigned int size = 1024 * 1024 * 20) override;
 
@@ -62,7 +63,7 @@ public:
 
 	virtual bool AddReceiveCallBack(const NET_RECEIVE_FUNCTOR_PTR& cb);
 
-	virtual bool AddEventCallBack(const NET_EVENT_FUNCTOR_PTR& cb);
+	virtual bool AddEventCallBack(const UDP_EVENT_FUNCTOR_PTR& cb);
 
 	virtual bool Execute();
 
@@ -93,7 +94,7 @@ private:
 
 	unsigned int mnBufferSize;
 	std::map<int, std::list<NET_RECEIVE_FUNCTOR_PTR>> mxReceiveCallBack;
-	std::list<NET_EVENT_FUNCTOR_PTR> mxEventCallBackList;
+	std::list<UDP_EVENT_FUNCTOR_PTR> mxEventCallBackList;
 	std::list<NET_RECEIVE_FUNCTOR_PTR> mxCallBackList;
 
 	NFILogModule* m_pLogModule;
