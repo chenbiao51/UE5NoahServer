@@ -29,73 +29,73 @@
 #define BUF_SIZE                        14500
 //500
 
-static void udp_cb(const int sock, short int which, void *arg)
-{
-	NFKcpModule* udpModule = (NFKcpModule*)arg;
+// static void udp_cb(const int sock, short int which, void *arg)
+// {
+// 	NFKcpModule* udpModule = (NFKcpModule*)arg;
 
 
-	struct sockaddr_in client_addr;
-	socklen_t size = sizeof(client_addr);
-	char buf[BUF_SIZE];
-	std::string  data(buf);
-	std::cout << std::this_thread::get_id() << " received:" << data.length() << std::endl;
+// 	struct sockaddr_in client_addr;
+// 	socklen_t size = sizeof(client_addr);
+// 	char buf[BUF_SIZE];
+// 	std::string  data(buf);
+// 	std::cout << std::this_thread::get_id() << " received:" << data.length() << std::endl;
 
-	/* Recv the data, store the address of the sender in server_sin */
-	if (recvfrom(sock, &buf, sizeof(buf) - 1, 0, (struct sockaddr *) &client_addr, &size) == -1)
-	{
-		perror("recvfrom()");
-		//event_loopbreak();
-	}
+// 	/* Recv the data, store the address of the sender in server_sin */
+// 	if (recvfrom(sock, &buf, sizeof(buf) - 1, 0, (struct sockaddr *) &client_addr, &size) == -1)
+// 	{
+// 		perror("recvfrom()");
+// 		//event_loopbreak();
+// 	}
 
-	/* Send the data back to the client */
-	if (sendto(sock, data.c_str(), data.length(), 0, (struct sockaddr *) &client_addr, size) == -1 )
-	{
-		perror("sendto()");
-		//event_loopbreak();
-	}
-}
+// 	/* Send the data back to the client */
+// 	if (sendto(sock, data.c_str(), data.length(), 0, (struct sockaddr *) &client_addr, size) == -1 )
+// 	{
+// 		perror("sendto()");
+// 		//event_loopbreak();
+// 	}
+// }
 
-int bind_socket(struct event *ev, int port, void* p)
-{
-	int                 sock_fd;
-	int                 flag = 1;
-	struct sockaddr_in  sin;
-	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);  //SOCK_DGRAM,when udp
-	if (sock_fd < 0)
-	{
-		perror("socket()");
-		return -1;
-	}
+// int bind_socket(struct event *ev, int port, void* p)
+// {
+// 	int                 sock_fd;
+// 	int                 flag = 1;
+// 	struct sockaddr_in  sin;
+// 	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);  //SOCK_DGRAM,when udp
+// 	if (sock_fd < 0)
+// 	{
+// 		perror("socket()");
+// 		return -1;
+// 	}
 
-	if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int)) < 0)
-	{
-		perror("setsockopt()");
-		return 1;
-	}
+// 	if (setsockopt(sock_fd, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(int)) < 0)
+// 	{
+// 		perror("setsockopt()");
+// 		return 1;
+// 	}
 
-	memset(&sin, 0, sizeof(sin));
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = INADDR_ANY;
-	sin.sin_port = htons(port);
+// 	memset(&sin, 0, sizeof(sin));
+// 	sin.sin_family = AF_INET;
+// 	sin.sin_addr.s_addr = INADDR_ANY;
+// 	sin.sin_port = htons(port);
 
-	if (::bind(sock_fd, (struct sockaddr *)&sin, sizeof(sin)) < 0)
-	{
-		perror("bind()");
-		return -1;
-	}
-	else
-	{
-		printf("bind() success - [%u]\n", port);
-	}
+// 	if (::bind(sock_fd, (struct sockaddr *)&sin, sizeof(sin)) < 0)
+// 	{
+// 		perror("bind()");
+// 		return -1;
+// 	}
+// 	else
+// 	{
+// 		printf("bind() success - [%u]\n", port);
+// 	}
 
-	event_set(ev, sock_fd, EV_READ | EV_PERSIST, &udp_cb, p);
-	if (event_add(ev, NULL) == -1)
-	{
-		printf("event_add() failed\n");
-	}
+// 	event_set(ev, sock_fd, EV_READ | EV_PERSIST, &udp_cb, p);
+// 	if (event_add(ev, NULL) == -1)
+// 	{
+// 		printf("event_add() failed\n");
+// 	}
 
-	return 0;
-}
+// 	return 0;
+// }
 
 NFKcpModule::NFKcpModule(NFIPluginManager* p)
 {
@@ -131,11 +131,11 @@ int NFKcpModule::Initialization(const unsigned int nMaxClient, const unsigned sh
 	}
 
 	/* Bind socket */
-	if (bind_socket(&udp_event, nPort, this) != 0)
-	{
-		printf("bind_socket() failed\n");
-		return -1;
-	}
+	// if (bind_socket(&udp_event, nPort, this) != 0)
+	// {
+	// 	printf("bind_socket() failed\n");
+	// 	return -1;
+	// }
 
 	return 0;
 }
