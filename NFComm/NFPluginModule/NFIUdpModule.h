@@ -173,7 +173,7 @@ public:
 	}
 
 	template<typename BaseType>
-	bool AddEventCallBack(BaseType* pBase, void (BaseType::*handler)(const NFSOCK, const NF_NET_EVENT, NFIKcp*))
+	bool AddEventCallBack(BaseType* pBase, void (BaseType::*handler)(const NFSOCK, const NF_NET_EVENT, NFIUdp*))
 	{
 		NET_EVENT_FUNCTOR functor = std::bind(handler, pBase, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
 		NET_EVENT_FUNCTOR_PTR functorPtr(new NET_EVENT_FUNCTOR(functor));

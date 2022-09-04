@@ -25,8 +25,8 @@
 #include "NFHttpClientModule.h"
 #include "NFHttpServerModule.h"
 #include "NFWSModule.h"
-#include "NFUdpModule.h"
-#include "NFKcpModule.h"
+#include "NFComm/NFNetPlugin/NFUdpModule.h"
+#include "NFComm/NFNetPlugin/NFKcpModule.h"
 #include "NFComm/NFPluginModule/NFIPluginManager.h"
 
 #ifdef NF_DYNAMIC_PLUGIN
