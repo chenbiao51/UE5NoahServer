@@ -3,6 +3,7 @@
 Origin https://github.com/ketoo/NoahGameFrame.git
 
 ## 开发阶段
+- complete server kcp mongodb
 
 ## 新增
 - Kcp
