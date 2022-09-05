@@ -69,14 +69,13 @@ public:
 
 
 	virtual bool SendMsgWithOutHead(const int msgID, const std::string& msg, const NFSOCK sockIndex);
-	virtual bool SendMsgToAllClientWithOutHead(const int msgID, const std::string& msg);
+
 
 	virtual bool SendMsgPB(const uint16_t msgID, const google::protobuf::Message& xData, const NFSOCK sockIndex);
 	virtual bool SendMsgPB(const uint16_t msgID, const google::protobuf::Message& xData, const NFSOCK sockIndex, const NFGUID id);
 	virtual bool SendMsg(const uint16_t msgID, const std::string& xData, const NFSOCK sockIndex);
 	virtual bool SendMsg(const uint16_t msgID, const std::string& xData, const NFSOCK sockIndex, const NFGUID id);
 
-	virtual bool SendMsgPBToAllClient(const uint16_t msgID, const google::protobuf::Message& xData);
 
 	virtual bool SendMsgPB(const uint16_t msgID, const google::protobuf::Message& xData, const NFSOCK sockIndex, const std::vector<NFGUID>* pClientIDList);
 	virtual bool SendMsgPB(const uint16_t msgID, const std::string& strData, const NFSOCK sockIndex,  const std::vector<NFGUID>* pClientIDList);

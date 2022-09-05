@@ -82,22 +82,7 @@
     }
 
 //////////////////////////////////////////////////////////////////////////
-// struct ServerData
-// {
-//     ServerData()
-//     {
-//         pData = NF_SHARE_PTR<NFMsg::ServerInfoReport>(NF_NEW NFMsg::ServerInfoReport());
-//         nFD = 0;
-//     }
-//     ~ServerData()
-//     {
-//         nFD = 0;
-//         pData = NULL;
-//     }
 
-// 	NFSOCK nFD;
-//     NF_SHARE_PTR<NFMsg::ServerInfoReport> pData;
-// };
 
 class NFIUdpModule : public NFIModule
 {
@@ -262,6 +247,7 @@ public:
 
 	//as server
 	virtual int Initialization(const unsigned int nMaxClient, const unsigned short nPort, const int nCpuCount = 4) = 0;
+	
 	virtual unsigned int ExpandBufferSize(const unsigned int size = 1024 * 1024 * 20) = 0;
 
 	virtual void RemoveReceiveCallBack(const int msgID) = 0;
@@ -277,14 +263,11 @@ public:
 
 	virtual bool SendMsgWithOutHead(const int msgID, const std::string& msg, const NFSOCK sockIndex) = 0;
 
-	virtual bool SendMsgToAllClientWithOutHead(const int msgID, const std::string& msg) = 0;
-
 	virtual bool SendMsgPB(const uint16_t msgID, const google::protobuf::Message& xData, const NFSOCK sockIndex) = 0;
 	virtual bool SendMsgPB(const uint16_t msgID, const google::protobuf::Message& xData, const NFSOCK sockIndex, const NFGUID nPlayer) = 0;
 	virtual bool SendMsg(const uint16_t msgID, const std::string& xData, const NFSOCK sockIndex) = 0;
 	virtual bool SendMsg(const uint16_t msgID, const std::string& xData, const NFSOCK sockIndex, const NFGUID id) = 0;
 
-	virtual bool SendMsgPBToAllClient(const uint16_t msgID, const google::protobuf::Message& xData) = 0;
 
 	virtual bool SendMsgPB(const uint16_t msgID, const google::protobuf::Message& xData, const NFSOCK sockIndex, const std::vector<NFGUID>* pClientIDList) = 0;
 	virtual bool SendMsgPB(const uint16_t msgID, const std::string& strData, const NFSOCK sockIndex,  const std::vector<NFGUID>* pClientIDList) = 0;
