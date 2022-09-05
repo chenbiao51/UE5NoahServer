@@ -108,7 +108,16 @@ bool NFUdpModule::Execute()
 
 bool NFUdpModule::SendMsgWithOutHead(const int msgID, const std::string &msg, const NFSOCK sockIndex)
 {
-	return true;
+	bool bRet = m_pUdp->SendMsgWithOutHead(msgID, msg.c_str(), (uint32_t) msg.length(), sockIndex);
+	if (!bRet)
+	{
+		std::ostringstream stream;
+		stream << " SendMsgWithOutHead failed fd " << sockIndex;
+		stream << " msg id " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+	}
+
+	return bRet;
 }
 
 
@@ -119,17 +128,59 @@ bool NFUdpModule::SendMsgPB(const uint16_t msgID, const google::protobuf::Messag
 
 bool NFUdpModule::SendMsgPB(const uint16_t msgID, const google::protobuf::Message &xData, const NFSOCK sockIndex,const NFGUID id)
 {
-	return true;
+    NFMsg::MsgBase xMsg;
+    if (!xData.SerializeToString(xMsg.mutable_msg_data()))
+    {
+		std::ostringstream stream;
+		stream << " SendMsgPB Message to  " << sockIndex;
+		stream << " Failed For Serialize of MsgData, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+        return false;
+    }
+
+    NFMsg::Ident* pPlayerID = xMsg.mutable_player_id();
+    *pPlayerID = NFToPB(id);
+
+    std::string msg;
+    if (!xMsg.SerializeToString(&msg))
+    {
+		std::ostringstream stream;
+		stream << " SendMsgPB Message to  " << sockIndex;
+		stream << " Failed For Serialize of MsgBase, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+        return false;
+    }
+
+	return SendMsgWithOutHead(msgID, msg, sockIndex);
 }
 
 bool NFUdpModule::SendMsg(const uint16_t msgID, const std::string &xData, const NFSOCK sockIndex)
 {
-	return true;
+	return SendMsgWithOutHead(msgID, xData, sockIndex);
 }
 
 bool NFUdpModule::SendMsg(const uint16_t msgID, const std::string &xData, const NFSOCK sockIndex, const NFGUID id)
 {
-	return true;
+	NFMsg::MsgBase xMsg;
+	xMsg.set_msg_data(xData.data(), xData.length());
+
+	NFMsg::Ident* pPlayerID = xMsg.mutable_player_id();
+	*pPlayerID = NFToPB(id);
+
+	std::string msg;
+	if (!xMsg.SerializeToString(&msg))
+	{
+		std::ostringstream stream;
+		stream << " SendMsgPB Message to  " << sockIndex;
+		stream << " Failed For Serialize of MsgBase, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+		return false;
+	}
+
+	return SendMsgWithOutHead(msgID, msg, sockIndex);
 }
 
 
