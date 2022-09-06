@@ -270,6 +270,17 @@ bool NFKcp::SendMsgToAllClient(const char* msg, const size_t len)
     return true;
 }
 
+bool NFKcp::Send(const sockaddr_in* remotesocket,const char* data,const NFUINT16& size)
+{
+    int iResult = sendto(mSocketFd, data, size, 0, (struct sockaddr *) &remotesocket, size);
+    if (iResult == -1 )
+	{
+		perror("sendto()");
+		return false;
+
+	}
+    return true;
+}
 
 bool NFKcp::SendMsg(const char* msg, const size_t len, const NFSOCK sockIndex)
 {

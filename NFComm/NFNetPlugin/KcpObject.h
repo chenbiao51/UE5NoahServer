@@ -3,6 +3,7 @@
 
 #include "ikcp.h"
 #include "NFKcp.h"
+#include "NFNet.h"
 #include "NFIKcp.h"
 #include "NFComm/NFPluginModule/NFPlatform.h"
 
@@ -14,6 +15,8 @@ typedef std::shared_ptr<KCP_RECEIVE_COMPLETED_FUNCTOR> KCP_RECEIVE_COMPLETED_FUN
 
 typedef std::function<void()> KCP_ONDISCONNECT_FUNCTOR;
 typedef std::shared_ptr<KCP_ONDISCONNECT_FUNCTOR> KCP_ONDISCONNECT_FUNCTOR_PTR;
+
+
 
 class KcpObject
 {
@@ -52,7 +55,7 @@ public:
         ikcp_wndsize(mkcp,512,512);
         ikcp_setmtu(mkcp,1400);
         mkcp->output = [](const char* buf,int len,struct IKCPCB* kcp,void*  user)->int{
-            ((KcpObject*)user)->nfKcp->Send(((KcpObject*)user)->remoteEp,(char*)buf,len);
+            ((KcpObject*)user)->nfKcp->Send(&(((KcpObject*)user)->remoteEp),(char*)buf,len);
             return 0;
         };
         this->lastPingTime = NFGetTimeMS();

@@ -76,21 +76,39 @@ unsigned int NFUdpModule::ExpandBufferSize(const unsigned int size)
 
 void NFUdpModule::RemoveReceiveCallBack(const int msgID)
 {
-
+	std::map<int, std::list<NET_RECEIVE_FUNCTOR_PTR>>::iterator it = mxReceiveCallBack.find(msgID);
+    if (mxReceiveCallBack.end() != it)
+    {
+        mxReceiveCallBack.erase(it);
+    }
 }
 
 bool NFUdpModule::AddReceiveCallBack(const int msgID, const NET_RECEIVE_FUNCTOR_PTR &cb)
 {
-	return true;
+	if (mxReceiveCallBack.find(msgID) == mxReceiveCallBack.end())
+    {
+		std::list<NET_RECEIVE_FUNCTOR_PTR> xList;
+		xList.push_back(cb);
+		mxReceiveCallBack.insert(std::map<int, std::list<NET_RECEIVE_FUNCTOR_PTR>>::value_type(msgID, xList));
+        return true;
+    }
+
+	std::map<int, std::list<NET_RECEIVE_FUNCTOR_PTR>>::iterator it = mxReceiveCallBack.find(msgID);
+	it->second.push_back(cb);
+
+    return true;
 }
 
 bool NFUdpModule::AddReceiveCallBack(const NET_RECEIVE_FUNCTOR_PTR &cb)
 {
+	mxCallBackList.push_back(cb);
 	return true;
 }
 
 bool NFUdpModule::AddEventCallBack(const UDP_EVENT_FUNCTOR_PTR &cb)
 {
+	mxEventCallBackList.push_back(cb);
+
 	return true;
 }
 

@@ -36,6 +36,7 @@
 #include <event2/thread.h>
 #include <event2/event_compat.h>
 #include "NFNetModule.h"
+#include "KcpObject.h"
 #include "NFComm/NFPluginModule/NFIKcpModule.h"
 
 
@@ -50,10 +51,10 @@ public:
 	virtual bool AfterInit();
 
 	//as client
-	virtual void Initialization(const char* ip, const unsigned short nPort) {};
+	virtual void Initialization(const char* ip, const unsigned short nPort) override;
 
 	//as server
-	virtual int Initialization(const unsigned int nMaxClient, const unsigned short nPort, const int nCpuCount = 4);
+	virtual int Initialization(const unsigned int nMaxClient, const unsigned short nPort, const int nCpuCount = 4) override;
 
 	virtual unsigned int ExpandBufferSize(const unsigned int size = 1024 * 1024 * 20) override;
 
@@ -92,11 +93,10 @@ protected:
 private:
     NFIKcp* m_pKcp;
 
-	// struct event_base* mxBase = nullptr;
-	// struct event udp_event;
+
 	unsigned int mnBufferSize;
 	std::map<int, std::list<NET_RECEIVE_FUNCTOR_PTR>> mxReceiveCallBack;
-	std::list<NET_EVENT_FUNCTOR_PTR> mxEventCallBackList;
+	std::list<KCP_EVENT_FUNCTOR_PTR> mxEventCallBackList;
 	std::list<NET_RECEIVE_FUNCTOR_PTR> mxCallBackList;
 
 	NFILogModule* m_pLogModule;

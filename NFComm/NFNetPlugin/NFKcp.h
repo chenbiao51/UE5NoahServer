@@ -45,8 +45,10 @@
 #pragma pack(push, 1)
 
 class  NFKcp;
+class  KcpObject;
 
-//typedef std::function<void(const KcpObject* kobject)> KCP_ACCEPT_OBJECT;
+typedef std::function<void(const NFSOCK sockIndex, const NF_NET_EVENT nEvent, NFIKcp* pKcp)> KCP_EVENT_FUNCTOR;
+typedef std::shared_ptr<KCP_EVENT_FUNCTOR> KCP_EVENT_FUNCTOR_PTR;
 
 class NFKcp : public NFIKcp
 {
@@ -67,7 +69,7 @@ public:
     }
 
     template<typename BaseType>
-    NFKcp(BaseType* pBaseType, void (BaseType::*handleReceive)(const NFSOCK, const int, const char*, const uint32_t), void (BaseType::*handleEvent)(const NFSOCK, const NF_NET_EVENT, NFINet*), bool isServer)
+    NFKcp(BaseType* pBaseType, void (BaseType::*handleReceive)(const NFSOCK, const int, const char*, const uint32_t), void (BaseType::*handleEvent)(const NFSOCK, const NF_NET_EVENT, NFIKcp*))
     {
         mxBase = NULL;
 
@@ -76,7 +78,6 @@ public:
         mstrIP = "";
         mnPort = 0;
         mnCpuCount = 0;
-        mbServer = isServer;
         mbWorking = false;
         
         mnSendMsgTotal = 0;
@@ -97,7 +98,7 @@ public:
 
     virtual bool Final() override ;
 
-    virtual bool Send(const sockaddr_in remoteAddr,const char* data, const NFUINT16& size) override ;
+    virtual bool Send(const sockaddr_in* remoteAddr,const char* data, const NFUINT16& size) override ;
     virtual bool SendMsg(const char* msg, const size_t len, const NFSOCK sockIndex) override ;
 
     virtual bool SendMsgWithOutHead(const int16_t msgID, const char* msg, const size_t len, const NFSOCK sockIndex) override ;
@@ -168,7 +169,7 @@ public:
     NFUINT32 IdGenerater = 1000000;       
     std::map<NFUINT32, KcpObject*> mmObject;
     std::map<NFUINT32, KcpObject*> reqkcpObject;   //
-    //std::vector<NFSOCK> mvRemoveObject;
+
 
     
     int mnMaxConnect;
@@ -193,23 +194,11 @@ public:
     //KCP_ACCEPT_OBJECT onAcceptObject;
     std::function<void()> onDisconnect;
 
+
     NET_RECEIVE_FUNCTOR mRecvCB;
-    NET_EVENT_FUNCTOR mEventCB;
+    KCP_EVENT_FUNCTOR mEventCB;
 
-    //1: async thread to process net event & msg and main thread to process logic business(decode binary data to message object)
-    //2: pass a functor when startup net module to decode binary data to message object with async thread
-    // struct NetEvent
-	// {
-	// 	NF_NET_EVENT event;
-	// 	int fd = 0;
-	// 	//std::string* data;
-	// 	char* data = nullptr;
-	// 	int len = 0;
 
-	// 	void* dataObject = nullptr;
-	// };
-	// moodycamel::ConcurrentQueue<NetEvent> msgQueue;
-    //////////////////////////////////////////////////////////////////////////
 };
 
 #pragma pack(pop)
