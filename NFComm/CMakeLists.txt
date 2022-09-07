@@ -10,6 +10,7 @@ add_subdirectory(NFSecurityPlugin)
 add_subdirectory(NFNavigationPlugin)
 add_subdirectory(NFNoSqlPlugin)
 add_subdirectory(NFMongoDBPlugin)
+add_subdirectory(NFLubanPlugin)
 add_subdirectory(NFTestPlugin)
 add_subdirectory(NFLuaScriptPlugin)
 

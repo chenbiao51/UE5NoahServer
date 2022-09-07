@@ -23,28 +23,47 @@
    limitations under the License.
 */
 
-#include "NFComm/NFPluginModule/NFPlatform.h"
 
-#ifdef NF_DEBUG_MODE
 
-#if NF_PLATFORM == NF_PLATFORM_WIN
-#pragma comment( lib, "ws2_32" )
-//#pragma comment( lib, "gtest.lib" )
+#include "NFLubanModule.h"
+#include "NFLubanPlugin.h"
 
-#elif NF_PLATFORM == NF_PLATFORM_LINUX || NF_PLATFORM == NF_PLATFORM_ANDROID
+//
+//
+#ifdef NF_DYNAMIC_PLUGIN
 
-//#pragma comment( lib, "gtest.a" )
-#elif NF_PLATFORM == NF_PLATFORM_APPLE || NF_PLATFORM == NF_PLATFORM_APPLE_IOS
-#endif
+NF_EXPORT void DllStartPlugin(NFIPluginManager* pm)
+{
 
-#else
+    CREATE_PLUGIN(pm, NFLubanPlugin)
 
-#if NF_PLATFORM == NF_PLATFORM_WIN
-//#pragma comment( lib, "gtest.lib" )
+};
 
-#elif NF_PLATFORM == NF_PLATFORM_LINUX || NF_PLATFORM == NF_PLATFORM_ANDROID
-//#pragma comment( lib, "gtest.a" )
-#elif NF_PLATFORM == NF_PLATFORM_APPLE || NF_PLATFORM == NF_PLATFORM_APPLE_IOS
-#endif
+NF_EXPORT void DllStopPlugin(NFIPluginManager* pm)
+{
+    DESTROY_PLUGIN(pm, NFLubanPlugin)
+};
 
 #endif
+//////////////////////////////////////////////////////////////////////////
+
+const int NFLubanPlugin::GetPluginVersion()
+{
+    return 0;
+}
+
+const std::string NFLubanPlugin::GetPluginName()
+{
+	return GET_CLASS_NAME(NFLubanPlugin);
+}
+
+void NFLubanPlugin::Install()
+{
+    REGISTER_MODULE(pPluginManager, NFILubanModule, NFLubanModule)
+
+}
+
+void NFLubanPlugin::Uninstall()
+{
+    UNREGISTER_MODULE(pPluginManager, NFILubanModule, NFLubanModule)
+}
