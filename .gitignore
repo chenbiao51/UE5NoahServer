@@ -55,6 +55,7 @@
 /_Out/Debug/
 /_Out/Release/
 /_Out/NFDataCfg/Tool/
+/_Out/NFDataCfg/NFDataCfg/Bytes/
 
 /Dependencies/vcpkg
 /Dependencies/gperftools-2.5
