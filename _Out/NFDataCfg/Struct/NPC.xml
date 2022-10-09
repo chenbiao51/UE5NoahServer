@@ -11,7 +11,7 @@
 		<Property Id="ATK_WIND" Cache="0" Desc="LPID_ATK_WIND" Force="0" Private="1" Public="1" Ref="0" Save="0" Type="int" Upload="0" />
 		<Property Id="BUFF_GATE" Cache="0" Desc="LPID_BUFF_GATE" Force="0" Private="1" Public="1" Ref="0" Save="0" Type="int" Upload="0" />
 		<Property Id="CRITICAL" Cache="0" Desc="LPID_CRITICAL" Force="0" Private="1" Public="1" Ref="0" Save="0" Type="int" Upload="0" />
-		<Property Id="CommonCD" Cache="0" Force="0" Private="1" Public="0" Ref="0" Save="0" Type="float" Upload="0" />
+		<Property Id="CommonCD" Cache="0" Desc="" Force="0" Private="1" Public="0" Ref="0" Save="0" Type="float" Upload="0" />
 		<Property Id="DEF_DARK" Cache="0" Desc="LPID_DEF_DARK" Force="0" Private="1" Public="1" Ref="0" Save="0" Type="int" Upload="0" />
 		<Property Id="DEF_FIRE" Cache="0" Desc="LPID_DEF_FIRE" Force="0" Private="1" Public="1" Ref="0" Save="0" Type="int" Upload="0" />
 		<Property Id="DEF_ICE" Cache="0" Desc="LPID_DEF_ICE" Force="0" Private="1" Public="1" Ref="0" Save="0" Type="int" Upload="0" />
@@ -33,7 +33,7 @@
 		<Property Id="Icon" Cache="0" Desc="图标" Force="0" Private="1" Public="1" Ref="0" Save="0" Type="string" Upload="0" />
 		<Property Id="LUCK" Cache="0" Desc="" Force="0" Private="1" Public="1" Ref="0" Save="0" Type="int" Upload="0" />
 		<Property Id="LastAttacker" Cache="0" Desc="最后攻击者" Force="0" Private="1" Public="1" Ref="0" Save="0" Type="object" Upload="0" />
-		<Property Id="Level" Cache="0" Force="0" Private="1" Public="1" Ref="0" Save="1" Type="int" Upload="0" />
+		<Property Id="Level" Cache="0" Desc="" Force="0" Private="1" Public="1" Ref="0" Save="1" Type="int" Upload="0" />
 		<Property Id="MAGIC_GATE" Cache="0" Desc="LPID_MAGIC_GATE" Force="0" Private="1" Public="1" Ref="0" Save="0" Type="int" Upload="0" />
 		<Property Id="MAXHP" Cache="0" Desc="LPID_MAXHP" Force="0" Private="1" Public="1" Ref="0" Save="0" Type="int" Upload="0" />
 		<Property Id="MAXMP" Cache="0" Desc="LPID_MAXMP" Force="0" Private="1" Public="1" Ref="0" Save="0" Type="int" Upload="0" />
