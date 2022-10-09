@@ -53,8 +53,7 @@ public:
     virtual bool Execute();
     virtual bool BeforeShut();
     virtual bool Shut();
-    virtual bool Finalize();
-    virtual bool OnReloadPlugin();
+
 
 
 protected:
