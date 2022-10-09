@@ -277,7 +277,7 @@ public:
     //send a message with out msg-head[need to add msg-head for this message by youself]
     virtual bool SendMsg(const char* msg, const size_t len, const NFSOCK sockIndex) = 0;
 
-
+    virtual bool AddUdpObject(const NFSOCK sockIndex, UdpObject* pObject)=0;
     virtual bool IsServer() = 0;
 
     virtual bool Log(int severity, const char* msg) = 0;

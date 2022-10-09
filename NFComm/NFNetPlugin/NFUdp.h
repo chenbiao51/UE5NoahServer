@@ -94,7 +94,7 @@ public:
     virtual void Initialization() override ;
     virtual int Initialization(const unsigned int nMaxClient, const unsigned short nPort, const int nCpuCount = 4) override ;
 	virtual unsigned int ExpandBufferSize(const unsigned int size) override;
-
+    virtual bool AddUdpObject(const NFSOCK sockIndex, UdpObject* pObject) override ;
     virtual bool Final() override ;
 
     virtual bool SendMsg(const char* msg, const size_t len, const NFSOCK sockIndex) override ;
@@ -131,7 +131,7 @@ protected:
     int EnCode(const uint16_t umsgID, const char* strData, const uint32_t unDataLen, std::string& strOutData);
 
 private:
-
+    std::map<NFSOCK, UdpObject*> mmObject;
 
     int mnMaxConnect;
     std::string mstrIP;

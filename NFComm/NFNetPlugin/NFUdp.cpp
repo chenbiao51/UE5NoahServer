@@ -58,7 +58,7 @@ TO
 
 void NFUdp::listener_cb(const int sock, short int which, void *arg)
 {
-	NFUdp* udp = (NFUdp*)arg;
+	NFUdp* pUdp = (NFUdp*)arg;
 
 
 	struct sockaddr_in client_addr;
@@ -75,11 +75,21 @@ void NFUdp::listener_cb(const int sock, short int which, void *arg)
 	}
 
 	/* Send the data back to the client */
-	if (sendto(sock, data.c_str(), data.length(), 0, (struct sockaddr *) &client_addr, size) == -1 )
-	{
-		perror("sendto()");
-		//event_loopbreak();
-	}
+	// if (sendto(sock, data.c_str(), data.length(), 0, (struct sockaddr *) &client_addr, size) == -1 )
+	// {
+	// 	perror("sendto()");
+	// 	//event_loopbreak();
+	// }
+
+    if (data.length() > 0)
+    {
+        if (pUdp->mRecvCB)
+        {
+            //pUdp->mRecvCB(pObject->GetRealFD(), -1, pObject->GetBuff(), data.length());
+            pUdp->mnReceiveMsgTotal++;
+        }  
+    }   
+        
 }
 
 
@@ -246,7 +256,11 @@ bool NFUdp::Dismantle(NetObject* pObject)
     return bNeedDismantle;
 }
 
-
+bool NFUdp::AddUdpObject(const NFSOCK sockIndex, UdpObject* pObject)
+{
+    //lock
+    return mmObject.insert(std::map<NFSOCK, UdpObject*>::value_type(sockIndex, pObject)).second;
+}
 
 int NFUdp::InitClientNet()
 {
@@ -275,6 +289,12 @@ int NFUdp::InitClientNet()
 		return -1;
 	}
 
+    UdpObject* pObject = new UdpObject(this, sock_fd, addr, bev);
+    if (!AddUdpObject(0, pObject))
+    {
+        assert(0);
+        return -1;
+    }
 
 
 	event_set(&mxEvent, sock_fd, EV_READ | EV_PERSIST, &recvfrom_cb, this);
