@@ -151,7 +151,7 @@ private:
     struct event mxEvent;
     //////////////////////////////////////////////////////////////////////////
 
-    NET_RECEIVE_FUNCTOR mRecvCB;
+    UDP_RECEIVE_FUNCTOR mRecvCB;
     UDP_EVENT_FUNCTOR mEventCB;
 
     //1: async thread to process net event & msg and main thread to process logic business(decode binary data to message object)

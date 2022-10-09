@@ -68,6 +68,9 @@
 
 class NFIUdp;
 
+typedef std::function<void(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len)> UDP_RECEIVE_FUNCTOR;
+typedef std::shared_ptr<UDP_RECEIVE_FUNCTOR> UDP_RECEIVE_FUNCTOR_PTR;
+
 typedef std::function<void(const NFSOCK sockIndex, const NF_NET_EVENT nEvent, NFIUdp* pUdp)> UDP_EVENT_FUNCTOR;
 typedef std::shared_ptr<UDP_EVENT_FUNCTOR> UDP_EVENT_FUNCTOR_PTR;
 

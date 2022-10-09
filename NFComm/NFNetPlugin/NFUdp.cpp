@@ -171,38 +171,6 @@ bool NFUdp::SendMsg(const char* msg, const size_t len, const NFSOCK sockIndex)
 	{
 		return false;
 	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     return false;
 }
 

@@ -83,18 +83,18 @@ public:
 	virtual NFIUdp* GetUdp();
 
 protected:
-	void OnReceiveNetPack(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len);
+	void OnReceiveUdpPack(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len);
 
-	void OnSocketNetEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIUdp* pUdp);
+	void OnSocketUdpEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIUdp* pUdp);
 
 
 private:
 	NFIUdp* m_pUdp;
 
 	unsigned int mnBufferSize;
-	std::map<int, std::list<NET_RECEIVE_FUNCTOR_PTR>> mxReceiveCallBack;
+	std::map<int, std::list<UDP_RECEIVE_FUNCTOR_PTR>> mxReceiveCallBack;
 	std::list<UDP_EVENT_FUNCTOR_PTR> mxEventCallBackList;
-	std::list<NET_RECEIVE_FUNCTOR_PTR> mxCallBackList;
+	std::list<UDP_RECEIVE_FUNCTOR_PTR> mxCallBackList;
 
 	NFILogModule* m_pLogModule;
 };

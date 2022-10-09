@@ -54,7 +54,7 @@ bool NFUdpModule::AfterInit()
 
 void NFUdpModule::Initialization()  //client
 {
-	m_pUdp = NF_NEW NFUdp(this, &NFUdpModule::OnReceiveNetPack, &NFUdpModule::OnSocketNetEvent);
+	m_pUdp = NF_NEW NFUdp(this, &NFUdpModule::OnReceiveUdpPack, &NFUdpModule::OnSocketUdpEvent);
     m_pUdp->ExpandBufferSize(mnBufferSize);
     m_pUdp->Initialization();
 
@@ -62,7 +62,7 @@ void NFUdpModule::Initialization()  //client
 
 int NFUdpModule::Initialization(const unsigned int nMaxClient, const unsigned short nPort, const int nCpuCount)
 {
-	m_pUdp = NF_NEW NFUdp(this, &NFUdpModule::OnReceiveNetPack, &NFUdpModule::OnSocketNetEvent);
+	m_pUdp = NF_NEW NFUdp(this, &NFUdpModule::OnReceiveUdpPack, &NFUdpModule::OnSocketUdpEvent);
     m_pUdp->ExpandBufferSize(mnBufferSize);
     return m_pUdp->Initialization(nMaxClient, nPort, nCpuCount);
 
@@ -218,12 +218,12 @@ NFIUdp *NFUdpModule::GetUdp()
 	return nullptr;
 }
 
-void NFUdpModule::OnReceiveNetPack(const NFSOCK sockIndex, const int msgID, const char *msg, const uint32_t len)
+void NFUdpModule::OnReceiveUdpPack(const NFSOCK sockIndex, const int msgID, const char *msg, const uint32_t len)
 {
 
 }
 
-void NFUdpModule::OnSocketNetEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIUdp *pUdp)
+void NFUdpModule::OnSocketUdpEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIUdp *pUdp)
 {
 
 }
