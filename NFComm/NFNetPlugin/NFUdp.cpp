@@ -56,7 +56,7 @@ TO
 
 
 
-void NFUdp::listener_cb(const int sock, short int which, void *arg)
+void NFUdp::listener_cb(const int sock, short int which, void *arg)  //Server
 {
 	NFUdp* pUdp = (NFUdp*)arg;
 
@@ -81,19 +81,19 @@ void NFUdp::listener_cb(const int sock, short int which, void *arg)
 	// 	//event_loopbreak();
 	// }
 
-    if (data.length() > 0)
-    {
-        if (pUdp->mRecvCB)
-        {
-            //pUdp->mRecvCB(pObject->GetRealFD(), -1, pObject->GetBuff(), data.length());
-            pUdp->mnReceiveMsgTotal++;
-        }  
-    }   
+    // if (data.length() > 0)
+    // {
+    //     if (pUdp->mRecvCB)
+    //     {
+    //         //pUdp->mRecvCB(pObject->GetRealFD(), -1, pObject->GetBuff(), data.length());
+    //         pUdp->mnReceiveMsgTotal++;
+    //     }  
+    // }   
         
 }
 
 
-void NFUdp::recvfrom_cb(const int sock, short int which, void *arg)
+void NFUdp::recvfrom_cb(const int sock, short int which, void *arg)   //client
 {
     UdpObject* pObject = (UdpObject*)arg;
     if (!pObject)
@@ -101,18 +101,33 @@ void NFUdp::recvfrom_cb(const int sock, short int which, void *arg)
         return;
     }
 
-    NFUdp* pNet = (NFUdp*)pObject->GetUdp();
-    if (!pNet)
+    NFUdp* pUdp = (NFUdp*)pObject->GetUdp();
+    if (!pUdp)
     {
         return;
     }
 
-    if (pObject->NeedRemove())
-    {
-        return;
+    struct sockaddr_in client_addr;
+	socklen_t size = sizeof(client_addr);
+	char buf[BUF_SIZE];
+	std::string  data(buf);
+	std::cout << std::this_thread::get_id() << " received:" << data.length() << std::endl;
+
+	/* Recv the data, store the address of the sender in server_sin */
+	if (recvfrom(sock, &buf, sizeof(buf) - 1, 0, (struct sockaddr *) &client_addr, &size) == -1)
+	{
+		perror("recvfrom()");
+		//event_loopbreak();
 	}
 
-    
+    if (data.length() > 0)
+    {
+        if (pUdp->mRecvCB)
+        {
+            pUdp->mRecvCB(pObject->GetRealFD(), -1, data.data(), data.length());
+            pUdp->mnReceiveMsgTotal++;
+        }  
+    }   
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -281,7 +296,6 @@ int NFUdp::InitClientNet()
 
     int                 sock_fd;
 	int                 flag = 1;
-	struct sockaddr_in  sin;
 	sock_fd = socket(AF_INET, SOCK_DGRAM, 0);  //SOCK_DGRAM,when udp
 	if (sock_fd < 0)
 	{
@@ -297,7 +311,7 @@ int NFUdp::InitClientNet()
     }
 
 
-	event_set(&mxEvent, sock_fd, EV_READ | EV_PERSIST, &recvfrom_cb, this);
+	event_set(&mxEvent, sock_fd, EV_READ | EV_PERSIST, &recvfrom_cb, (void*)pObject);
 	if (event_add(&mxEvent, NULL) == -1)
 	{
 		printf("event_add() failed\n");
