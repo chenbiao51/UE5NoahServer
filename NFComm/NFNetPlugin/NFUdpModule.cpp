@@ -43,6 +43,7 @@ NFUdpModule::~NFUdpModule()
 
 bool NFUdpModule::Init()
 {
+	m_pLogModule = pPluginManager->FindModule<NFILogModule>();
 	return true;
 }
 
@@ -218,12 +219,64 @@ NFIUdp *NFUdpModule::GetUdp()
 	return nullptr;
 }
 
-void NFUdpModule::OnReceiveUdpPack(const NFSOCK sockIndex, const int msgID, const char *msg, const uint32_t len)
-{
 
+
+void NFUdpModule::OnReceiveUdpPack(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len)
+{
+	m_pLogModule->LogInfo(pPluginManager->GetAppName() + std::to_string(pPluginManager->GetAppID()) + " NFNetModule::OnReceiveNetPack " + std::to_string(msgID), __FILE__, __LINE__);
+
+	NFPerformance performance;
+
+#if NF_PLATFORM != NF_PLATFORM_WIN
+	NF_CRASH_TRY
+#endif
+
+    std::map<int, std::list<UDP_RECEIVE_FUNCTOR_PTR>>::iterator it = mxReceiveCallBack.find(msgID);
+    if (mxReceiveCallBack.end() != it)
+    {
+		std::list<UDP_RECEIVE_FUNCTOR_PTR>& xFunList = it->second;
+		for (std::list<UDP_RECEIVE_FUNCTOR_PTR>::iterator itList = xFunList.begin(); itList != xFunList.end(); ++itList)
+		{
+			UDP_RECEIVE_FUNCTOR_PTR& pFunPtr = *itList;
+			UDP_RECEIVE_FUNCTOR* pFunc = pFunPtr.get();
+
+			pFunc->operator()(sockIndex, msgID, msg, len);
+		}
+    } 
+	else
+    {
+        for (std::list<UDP_RECEIVE_FUNCTOR_PTR>::iterator itList = mxCallBackList.begin(); itList != mxCallBackList.end(); ++itList)
+        {
+            UDP_RECEIVE_FUNCTOR_PTR& pFunPtr = *itList;
+            UDP_RECEIVE_FUNCTOR* pFunc = pFunPtr.get();
+
+            pFunc->operator()(sockIndex, msgID, msg, len);
+        }
+    }
+
+#if NF_PLATFORM != NF_PLATFORM_WIN
+	NF_CRASH_END
+#endif
+/*
+	if (performance.CheckTimePoint(5))
+	{
+		std::ostringstream os;
+		os << "---------------net module performance problem------------------- ";
+		os << performance.TimeScope();
+		os << "---------- MsgID: ";
+		os << msgID;
+		m_pLogModule->LogWarning(NFGUID(0, msgID), os, __FUNCTION__, __LINE__);
+	}
+ */
 }
 
-void NFUdpModule::OnSocketUdpEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIUdp *pUdp)
+void NFUdpModule::OnSocketUdpEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIUdp* pUdp)
 {
-
+    for (std::list<UDP_EVENT_FUNCTOR_PTR>::iterator it = mxEventCallBackList.begin();
+         it != mxEventCallBackList.end(); ++it)
+    {
+        UDP_EVENT_FUNCTOR_PTR& pFunPtr = *it;
+        UDP_EVENT_FUNCTOR* pFunc = pFunPtr.get();
+        pFunc->operator()(sockIndex, eEvent, pUdp);
+    }
 }
