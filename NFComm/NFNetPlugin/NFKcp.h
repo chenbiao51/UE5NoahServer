@@ -47,6 +47,9 @@
 class  NFKcp;
 class  KcpObject;
 
+typedef std::function<void(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len)> KCP_RECEIVE_FUNCTOR;
+typedef std::shared_ptr<KCP_RECEIVE_FUNCTOR> KCP_RECEIVE_FUNCTOR_PTR;
+
 typedef std::function<void(const NFSOCK sockIndex, const NF_NET_EVENT nEvent, NFIKcp* pKcp)> KCP_EVENT_FUNCTOR;
 typedef std::shared_ptr<KCP_EVENT_FUNCTOR> KCP_EVENT_FUNCTOR_PTR;
 
@@ -195,7 +198,7 @@ public:
     std::function<void()> onDisconnect;
 
 
-    NET_RECEIVE_FUNCTOR mRecvCB;
+    KCP_RECEIVE_FUNCTOR mRecvCB;
     KCP_EVENT_FUNCTOR mEventCB;
 
 

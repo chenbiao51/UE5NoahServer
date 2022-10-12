@@ -154,8 +154,8 @@ public:
 	template<typename BaseType>
 	bool AddReceiveCallBack(const int msgID, BaseType* pBase, void (BaseType::*handleReceiver)(const NFSOCK, const int, const char*, const uint32_t))
 	{
-		NET_RECEIVE_FUNCTOR functor = std::bind(handleReceiver, pBase, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-		NET_RECEIVE_FUNCTOR_PTR functorPtr(new NET_RECEIVE_FUNCTOR(functor));
+		KCP_RECEIVE_FUNCTOR functor = std::bind(handleReceiver, pBase, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+		KCP_RECEIVE_FUNCTOR_PTR functorPtr(new KCP_RECEIVE_FUNCTOR(functor));
 
 		return AddReceiveCallBack(msgID, functorPtr);
 	}
@@ -163,8 +163,8 @@ public:
 	template<typename BaseType>
 	bool AddReceiveCallBack(BaseType* pBase, void (BaseType::*handleReceiver)(const NFSOCK, const int, const char*, const uint32_t))
 	{
-		NET_RECEIVE_FUNCTOR functor = std::bind(handleReceiver, pBase, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-		NET_RECEIVE_FUNCTOR_PTR functorPtr(new NET_RECEIVE_FUNCTOR(functor));
+		KCP_RECEIVE_FUNCTOR functor = std::bind(handleReceiver, pBase, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+		KCP_RECEIVE_FUNCTOR_PTR functorPtr(new KCP_RECEIVE_FUNCTOR(functor));
 
 		return AddReceiveCallBack(functorPtr);
 	}
@@ -172,8 +172,8 @@ public:
 	template<typename BaseType>
 	bool AddEventCallBack(BaseType* pBase, void (BaseType::*handler)(const NFSOCK, const NF_NET_EVENT, NFIKcp*))
 	{
-		NET_EVENT_FUNCTOR functor = std::bind(handler, pBase, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-		NET_EVENT_FUNCTOR_PTR functorPtr(new NET_EVENT_FUNCTOR(functor));
+		KCP_EVENT_FUNCTOR functor = std::bind(handler, pBase, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+		KCP_EVENT_FUNCTOR_PTR functorPtr(new KCP_EVENT_FUNCTOR(functor));
 
 		return AddEventCallBack(functorPtr);
 	}
@@ -263,11 +263,11 @@ public:
 
 	virtual void RemoveReceiveCallBack(const int msgID) = 0;
 
-	virtual bool AddReceiveCallBack(const int msgID, const NET_RECEIVE_FUNCTOR_PTR& cb) = 0;
+	virtual bool AddReceiveCallBack(const int msgID, const KCP_RECEIVE_FUNCTOR_PTR& cb) = 0;
 
-	virtual bool AddReceiveCallBack(const NET_RECEIVE_FUNCTOR_PTR& cb) = 0;
+	virtual bool AddReceiveCallBack(const KCP_RECEIVE_FUNCTOR_PTR& cb) = 0;
 
-	virtual bool AddEventCallBack(const NET_EVENT_FUNCTOR_PTR& cb) = 0;
+	virtual bool AddEventCallBack(const KCP_EVENT_FUNCTOR_PTR& cb) = 0;
 
 	virtual bool Execute() = 0;
 

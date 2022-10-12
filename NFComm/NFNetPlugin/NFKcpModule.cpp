@@ -55,14 +55,14 @@ bool NFKcpModule::AfterInit()
 
 void NFKcpModule::Initialization(const char* ip, const unsigned short nPort)
 {
-    m_pKcp = NF_NEW NFKcp(this, &NFKcpModule::OnReceiveNetPack, &NFKcpModule::OnSocketNetEvent);
+    m_pKcp = NF_NEW NFKcp(this, &NFKcpModule::OnReceiveKcpPack, &NFKcpModule::OnSocketKcpEvent);
     m_pKcp->ExpandBufferSize(mnBufferSize);
     m_pKcp->Initialization(ip, nPort);
 }
 
 int NFKcpModule::Initialization(const unsigned int nMaxClient, const unsigned short nPort, const int nCpuCount)
 {
-    m_pKcp = NF_NEW NFKcp(this, &NFKcpModule::OnReceiveNetPack, &NFKcpModule::OnSocketNetEvent);
+    m_pKcp = NF_NEW NFKcp(this, &NFKcpModule::OnReceiveKcpPack, &NFKcpModule::OnSocketKcpEvent);
     m_pKcp->ExpandBufferSize(mnBufferSize);
     return m_pKcp->Initialization(nMaxClient, nPort, nCpuCount);
 }
@@ -78,17 +78,17 @@ void NFKcpModule::RemoveReceiveCallBack(const int msgID)
 
 }
 
-bool NFKcpModule::AddReceiveCallBack(const int msgID, const NET_RECEIVE_FUNCTOR_PTR &cb)
+bool NFKcpModule::AddReceiveCallBack(const int msgID, const KCP_RECEIVE_FUNCTOR_PTR &cb)
 {
 	return true;
 }
 
-bool NFKcpModule::AddReceiveCallBack(const NET_RECEIVE_FUNCTOR_PTR &cb)
+bool NFKcpModule::AddReceiveCallBack(const KCP_RECEIVE_FUNCTOR_PTR &cb)
 {
 	return true;
 }
 
-bool NFKcpModule::AddEventCallBack(const NET_EVENT_FUNCTOR_PTR &cb)
+bool NFKcpModule::AddEventCallBack(const KCP_EVENT_FUNCTOR_PTR &cb)
 {
 	return true;
 }
@@ -153,12 +153,12 @@ NFIKcp *NFKcpModule::GetKcp()
 	return nullptr;
 }
 
-void NFKcpModule::OnReceiveNetPack(const NFSOCK sockIndex, const int msgID, const char *msg, const uint32_t len)
+void NFKcpModule::OnReceiveKcpPack(const NFSOCK sockIndex, const int msgID, const char *msg, const uint32_t len)
 {
 
 }
 
-void NFKcpModule::OnSocketNetEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIKcp *pKcp)
+void NFKcpModule::OnSocketKcpEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIKcp *pKcp)
 {
 
 }

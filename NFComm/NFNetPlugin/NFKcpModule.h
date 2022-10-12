@@ -60,11 +60,11 @@ public:
 
 	virtual void RemoveReceiveCallBack(const int msgID);
 
-	virtual bool AddReceiveCallBack(const int msgID, const NET_RECEIVE_FUNCTOR_PTR& cb);
+	virtual bool AddReceiveCallBack(const int msgID, const KCP_RECEIVE_FUNCTOR_PTR& cb);
 
-	virtual bool AddReceiveCallBack(const NET_RECEIVE_FUNCTOR_PTR& cb);
+	virtual bool AddReceiveCallBack(const KCP_RECEIVE_FUNCTOR_PTR& cb);
 
-	virtual bool AddEventCallBack(const NET_EVENT_FUNCTOR_PTR& cb);
+	virtual bool AddEventCallBack(const KCP_EVENT_FUNCTOR_PTR& cb);
 
 	virtual bool Execute();
 
@@ -85,9 +85,9 @@ public:
 	virtual NFIKcp* GetKcp();
 
 protected:
-	void OnReceiveNetPack(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len);
+	void OnReceiveKcpPack(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len);
 
-	void OnSocketNetEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIKcp* pNet);
+	void OnSocketKcpEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIKcp* pNet);
 
 
 private:
@@ -95,9 +95,9 @@ private:
 
 
 	unsigned int mnBufferSize;
-	std::map<int, std::list<NET_RECEIVE_FUNCTOR_PTR>> mxReceiveCallBack;
+	std::map<int, std::list<KCP_RECEIVE_FUNCTOR_PTR>> mxReceiveCallBack;
 	std::list<KCP_EVENT_FUNCTOR_PTR> mxEventCallBackList;
-	std::list<NET_RECEIVE_FUNCTOR_PTR> mxCallBackList;
+	std::list<KCP_RECEIVE_FUNCTOR_PTR> mxCallBackList;
 
 	NFILogModule* m_pLogModule;
 };
