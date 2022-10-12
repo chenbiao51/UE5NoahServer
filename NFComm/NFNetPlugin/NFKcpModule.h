@@ -89,11 +89,11 @@ protected:
 
 	void OnSocketKcpEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIKcp* pNet);
 
-
+    void KeepAlive();
 private:
     NFIKcp* m_pKcp;
 
-
+    NFINT64 nLastTime;
 	unsigned int mnBufferSize;
 	std::map<int, std::list<KCP_RECEIVE_FUNCTOR_PTR>> mxReceiveCallBack;
 	std::list<KCP_EVENT_FUNCTOR_PTR> mxEventCallBackList;

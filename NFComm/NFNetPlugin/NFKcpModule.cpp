@@ -70,95 +70,399 @@ int NFKcpModule::Initialization(const unsigned int nMaxClient, const unsigned sh
 
 unsigned int NFKcpModule::ExpandBufferSize(const unsigned int size)
 {
-	return 0;
+	if (size > 0)
+    {
+        mnBufferSize = size;
+        if (m_pKcp)
+        {
+            m_pKcp->ExpandBufferSize(mnBufferSize);
+        }
+    }
+    return mnBufferSize;
 }
 
 void NFKcpModule::RemoveReceiveCallBack(const int msgID)
 {
-
+	std::map<int, std::list<KCP_RECEIVE_FUNCTOR_PTR>>::iterator it = mxReceiveCallBack.find(msgID);
+    if (mxReceiveCallBack.end() != it)
+    {
+        mxReceiveCallBack.erase(it);
+    }
 }
 
 bool NFKcpModule::AddReceiveCallBack(const int msgID, const KCP_RECEIVE_FUNCTOR_PTR &cb)
 {
-	return true;
+	if (mxReceiveCallBack.find(msgID) == mxReceiveCallBack.end())
+    {
+		std::list<KCP_RECEIVE_FUNCTOR_PTR> xList;
+		xList.push_back(cb);
+		mxReceiveCallBack.insert(std::map<int, std::list<KCP_RECEIVE_FUNCTOR_PTR>>::value_type(msgID, xList));
+        return true;
+    }
+
+	std::map<int, std::list<KCP_RECEIVE_FUNCTOR_PTR>>::iterator it = mxReceiveCallBack.find(msgID);
+	it->second.push_back(cb);
+
+    return true;
 }
 
 bool NFKcpModule::AddReceiveCallBack(const KCP_RECEIVE_FUNCTOR_PTR &cb)
 {
-	return true;
+	mxCallBackList.push_back(cb);
+
+    return true;
 }
 
 bool NFKcpModule::AddEventCallBack(const KCP_EVENT_FUNCTOR_PTR &cb)
 {
-	return true;
+	mxEventCallBackList.push_back(cb);
+
+    return true;
 }
 
 bool NFKcpModule::Execute()
 {
-	// if (mxBase)
-	// {
-	// 	event_base_loop(mxBase, EVLOOP_ONCE | EVLOOP_NONBLOCK);
-	// }
+	if (!m_pKcp)
+    {
+        return false;
+    }
+    KeepAlive();
+
+	m_pKcp->Execute();
 
 	return true;
 }
 
 bool NFKcpModule::SendMsgWithOutHead(const int msgID, const std::string &msg, const NFSOCK sockIndex)
 {
-	return true;
+	bool bRet = m_pKcp->SendMsgWithOutHead(msgID, msg.c_str(), (uint32_t) msg.length(), sockIndex);
+	if (!bRet)
+	{
+		std::ostringstream stream;
+		stream << " SendMsgWithOutHead failed fd " << sockIndex;
+		stream << " msg id " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+	}
+
+	return bRet;
 }
 
 bool NFKcpModule::SendMsgToAllClientWithOutHead(const int msgID, const std::string &msg)
 {
-	return true;
+	bool bRet = m_pKcp->SendMsgToAllClientWithOutHead(msgID, msg.c_str(), (uint32_t) msg.length());
+	if (!bRet)
+	{
+		std::ostringstream stream;
+		stream << " SendMsgToAllClientWithOutHead failed";
+		stream << " msg id " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+	}
+
+	return bRet;
 }
 
 bool NFKcpModule::SendMsgPB(const uint16_t msgID, const google::protobuf::Message &xData, const NFSOCK sockIndex)
 {
+	NFMsg::MsgBase xMsg;
+	if (!xData.SerializeToString(xMsg.mutable_msg_data()))
+	{
+		std::ostringstream stream;
+		stream << " SendMsgPB Message to  " << sockIndex;
+		stream << " Failed For Serialize of MsgData, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+		return false;
+	}
+
+	NFMsg::Ident* pPlayerID = xMsg.mutable_player_id();
+	*pPlayerID = NFToPB(NFGUID());
+
+	std::string msg;
+	if (!xMsg.SerializeToString(&msg))
+	{
+		std::ostringstream stream;
+		stream << " SendMsgPB Message to  " << sockIndex;
+		stream << " Failed For Serialize of MsgBase, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+		return false;
+	}
+
+	SendMsgWithOutHead(msgID, msg, sockIndex);
+
 	return true;
 }
 
 bool NFKcpModule::SendMsgPB(const uint16_t msgID, const google::protobuf::Message &xData, const NFSOCK sockIndex,const NFGUID id)
 {
-	return true;
+	NFMsg::MsgBase xMsg;
+    if (!xData.SerializeToString(xMsg.mutable_msg_data()))
+    {
+		std::ostringstream stream;
+		stream << " SendMsgPB Message to  " << sockIndex;
+		stream << " Failed For Serialize of MsgData, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+        return false;
+    }
+
+    NFMsg::Ident* pPlayerID = xMsg.mutable_player_id();
+    *pPlayerID = NFToPB(id);
+
+    std::string msg;
+    if (!xMsg.SerializeToString(&msg))
+    {
+		std::ostringstream stream;
+		stream << " SendMsgPB Message to  " << sockIndex;
+		stream << " Failed For Serialize of MsgBase, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+        return false;
+    }
+
+	return SendMsgWithOutHead(msgID, msg, sockIndex);
 }
 
 bool NFKcpModule::SendMsg(const uint16_t msgID, const std::string &xData, const NFSOCK sockIndex)
 {
-	return true;
+	return SendMsgWithOutHead(msgID, xData, sockIndex);
 }
 
 bool NFKcpModule::SendMsg(const uint16_t msgID, const std::string &xData, const NFSOCK sockIndex, const NFGUID id)
 {
-	return true;
+	NFMsg::MsgBase xMsg;
+	xMsg.set_msg_data(xData.data(), xData.length());
+
+	NFMsg::Ident* pPlayerID = xMsg.mutable_player_id();
+	*pPlayerID = NFToPB(id);
+
+	std::string msg;
+	if (!xMsg.SerializeToString(&msg))
+	{
+		std::ostringstream stream;
+		stream << " SendMsgPB Message to  " << sockIndex;
+		stream << " Failed For Serialize of MsgBase, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+		return false;
+	}
+
+	return SendMsgWithOutHead(msgID, msg, sockIndex);
 }
 
 bool NFKcpModule::SendMsgPBToAllClient(const uint16_t msgID, const google::protobuf::Message &xData)
 {
-	return true;
+	NFMsg::MsgBase xMsg;
+    if (!xData.SerializeToString(xMsg.mutable_msg_data()))
+    {
+		std::ostringstream stream;
+		stream << " SendMsgPBToAllClient";
+		stream << " Failed For Serialize of MsgData, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+        return false;
+    }
+
+    std::string msg;
+    if (!xMsg.SerializeToString(&msg))
+    {
+		std::ostringstream stream;
+		stream << " SendMsgPBToAllClient";
+		stream << " Failed For Serialize of MsgBase, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+        return false;
+    }
+
+    return SendMsgToAllClientWithOutHead(msgID, msg);
 }
 
 bool NFKcpModule::SendMsgPB(const uint16_t msgID, const google::protobuf::Message &xData, const NFSOCK sockIndex, const std::vector<NFGUID> *pClientIDList)
 {
-	return true;
+	if (!m_pKcp)
+    {
+		std::ostringstream stream;
+		stream << " m_pNet SendMsgPB faailed fd " << sockIndex;
+		stream << " Failed For Serialize of MsgBase, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+        return false;
+    }
+
+    NFMsg::MsgBase xMsg;
+    if (!xData.SerializeToString(xMsg.mutable_msg_data()))
+    {
+		std::ostringstream stream;
+		stream << " SendMsgPB faailed fd " << sockIndex;
+		stream << " Failed For Serialize of MsgBase, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+        return false;
+    }
+
+
+    NFMsg::Ident* pPlayerID = xMsg.mutable_player_id();
+    *pPlayerID = NFToPB(NFGUID());
+    if (pClientIDList)
+    {
+        for (int i = 0; i < pClientIDList->size(); ++i)
+        {
+            const NFGUID& ClientID = (*pClientIDList)[i];
+
+            NFMsg::Ident* pData = xMsg.add_player_client_list();
+            if (pData)
+            {
+                *pData = NFToPB(ClientID);
+            }
+        }
+    }
+
+    std::string msg;
+    if (!xMsg.SerializeToString(&msg))
+    {
+		std::ostringstream stream;
+		stream << " SendMsgPB faailed fd " << sockIndex;
+		stream << " Failed For Serialize of MsgBase, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+        return false;
+    }
+
+    return SendMsgWithOutHead(msgID, msg, sockIndex);
 }
 
 bool NFKcpModule::SendMsgPB(const uint16_t msgID, const std::string &strData, const NFSOCK sockIndex, const std::vector<NFGUID> *pClientIDList)
 {
-	return true;
+	if (!m_pKcp)
+    {
+		std::ostringstream stream;
+		stream << " SendMsgPB NULL Of Net faailed fd " << sockIndex;
+		stream << " Failed For Serialize of MsgBase, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+        return false;
+    }
+
+    NFMsg::MsgBase xMsg;
+    xMsg.set_msg_data(strData.data(), strData.length());
+
+    NFMsg::Ident* pPlayerID = xMsg.mutable_player_id();
+    *pPlayerID = NFToPB(NFGUID());
+    if (pClientIDList)
+    {
+        for (int i = 0; i < pClientIDList->size(); ++i)
+        {
+            const NFGUID& ClientID = (*pClientIDList)[i];
+
+            NFMsg::Ident* pData = xMsg.add_player_client_list();
+            if (pData)
+            {
+                *pData = NFToPB(ClientID);
+            }
+        }
+    }
+
+    std::string msg;
+    if (!xMsg.SerializeToString(&msg))
+    {
+		std::ostringstream stream;
+		stream << " SendMsgPB failed fd " << sockIndex;
+		stream << " Failed For Serialize of MsgBase, MessageID " << msgID;
+		m_pLogModule->LogError(stream, __FUNCTION__, __LINE__);
+
+        return false;
+    }
+
+    return SendMsgWithOutHead(msgID, msg, sockIndex);
 }
 
 NFIKcp *NFKcpModule::GetKcp()
 {
-	return nullptr;
+	return m_pKcp;
 }
 
-void NFKcpModule::OnReceiveKcpPack(const NFSOCK sockIndex, const int msgID, const char *msg, const uint32_t len)
+void NFKcpModule::OnReceiveKcpPack(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len)
 {
+	//m_pLogModule->LogInfo(pPluginManager->GetAppName() + std::to_string(pPluginManager->GetAppID()) + " NFNetModule::OnReceiveNetPack " + std::to_string(msgID), __FILE__, __LINE__);
 
+	NFPerformance performance;
+
+#if NF_PLATFORM != NF_PLATFORM_WIN
+	NF_CRASH_TRY
+#endif
+
+    std::map<int, std::list<KCP_RECEIVE_FUNCTOR_PTR>>::iterator it = mxReceiveCallBack.find(msgID);
+    if (mxReceiveCallBack.end() != it)
+    {
+		std::list<KCP_RECEIVE_FUNCTOR_PTR>& xFunList = it->second;
+		for (std::list<KCP_RECEIVE_FUNCTOR_PTR>::iterator itList = xFunList.begin(); itList != xFunList.end(); ++itList)
+		{
+			KCP_RECEIVE_FUNCTOR_PTR& pFunPtr = *itList;
+			KCP_RECEIVE_FUNCTOR* pFunc = pFunPtr.get();
+
+			pFunc->operator()(sockIndex, msgID, msg, len);
+		}
+    } 
+	else
+    {
+        for (std::list<KCP_RECEIVE_FUNCTOR_PTR>::iterator itList = mxCallBackList.begin(); itList != mxCallBackList.end(); ++itList)
+        {
+            KCP_RECEIVE_FUNCTOR_PTR& pFunPtr = *itList;
+            KCP_RECEIVE_FUNCTOR* pFunc = pFunPtr.get();
+
+            pFunc->operator()(sockIndex, msgID, msg, len);
+        }
+    }
+
+#if NF_PLATFORM != NF_PLATFORM_WIN
+	NF_CRASH_END
+#endif
+/*
+	if (performance.CheckTimePoint(5))
+	{
+		std::ostringstream os;
+		os << "---------------net module performance problem------------------- ";
+		os << performance.TimeScope();
+		os << "---------- MsgID: ";
+		os << msgID;
+		m_pLogModule->LogWarning(NFGUID(0, msgID), os, __FUNCTION__, __LINE__);
+	}
+ */
 }
 
-void NFKcpModule::OnSocketKcpEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIKcp *pKcp)
+void NFKcpModule::OnSocketKcpEvent(const NFSOCK sockIndex, const NF_NET_EVENT eEvent, NFIKcp* pNet)
 {
+    for (std::list<KCP_EVENT_FUNCTOR_PTR>::iterator it = mxEventCallBackList.begin();
+         it != mxEventCallBackList.end(); ++it)
+    {
+        KCP_EVENT_FUNCTOR_PTR& pFunPtr = *it;
+        KCP_EVENT_FUNCTOR* pFunc = pFunPtr.get();
+        pFunc->operator()(sockIndex, eEvent, pNet);
+    }
+}
+
+void NFKcpModule::KeepAlive()
+{
+    if (!m_pKcp)
+    {
+        return;
+    }
+
+    if (m_pKcp->IsServer())
+    {
+        return;
+    }
+
+    if (nLastTime + 10 > GetPluginManager()->GetNowTime())
+    {
+        return;
+    }
+
+    nLastTime = GetPluginManager()->GetNowTime();
+
+    NFMsg::ServerHeartBeat xMsg;
+    xMsg.set_count(0);
+
+    SendMsgPB(NFMsg::EGameMsgID::STS_HEART_BEAT, xMsg, 0);
 
 }
