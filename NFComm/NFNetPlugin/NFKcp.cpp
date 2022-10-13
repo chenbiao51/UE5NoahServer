@@ -191,8 +191,16 @@ bool NFKcp::Execute()
     {
         event_base_loop(mxBase, EVLOOP_ONCE | EVLOOP_NONBLOCK);
     }
-    
 
+    auto it = mmObject.begin();
+    for (; it != mmObject.end(); ++it)
+    {
+        KcpObject* pKcpObject = (KcpObject*)it->second;
+        if (pKcpObject && !pKcpObject->NeedRemove())
+        {
+            pKcpObject->Execute();
+        }
+    }
     return true;
 }
 
@@ -254,10 +262,10 @@ bool NFKcp::SendMsgToAllClient(const char* msg, const size_t len)
 	auto it = mmObject.begin();
     for (; it != mmObject.end(); ++it)
     {
-        NetObject* pNetObject = (NetObject*)it->second;
-        if (pNetObject && !pNetObject->NeedRemove())
+        KcpObject* pKcpObject = (KcpObject*)it->second;
+        if (pKcpObject && !pKcpObject->NeedRemove())
         {
-            bufferevent* bev = (bufferevent*)pNetObject->GetUserData();
+            bufferevent* bev = (bufferevent*)pKcpObject->GetUserData();
             if (NULL != bev)
             {
                 bufferevent_write(bev, msg, len);
@@ -297,10 +305,10 @@ bool NFKcp::SendMsg(const char* msg, const size_t len, const NFSOCK sockIndex)
 	auto it = mmObject.find(sockIndex);
     if (it != mmObject.end())
     {
-        NetObject* pNetObject = (NetObject*)it->second;
-        if (pNetObject)
+        KcpObject* pKcpObject = (KcpObject*)it->second;
+        if (pKcpObject)
         {
-            bufferevent* bev = (bufferevent*)pNetObject->GetUserData();
+            bufferevent* bev = (bufferevent*)pKcpObject->GetUserData();
             if (NULL != bev)
             {
                 bufferevent_write(bev, msg, len);
