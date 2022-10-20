@@ -140,13 +140,29 @@ void  KcpObject::C_Send(const char* data,const NFUINT16& size)
 
 bool KcpObject::Execute()
 {
+    
+
     if(this->mbServer)
     {
-        S_Update(NFGetTimeMS());
+        if(this->isConnected)
+        {
+            S_Update(NFGetTimeMS());
+        }
     }
     else 
     {
-       C_Update(NFGetTimeMS());
+        if(!this->isConnected)
+        {
+            NFUINT32 syn = NFKcp::KcpProtoType::SYN;
+            memcpy(chacheBytes,(NFUINT8*)&syn,4);
+            memcpy(chacheBytes+4,(NFUINT8*)&Id,4);
+            memcpy(chacheBytes+4,(NFUINT8*)&reqCId,4);
+            nfKcp->Send(&remoteEp,(char*)chacheBytes,8);
+        }
+        else 
+        {
+            C_Update(NFGetTimeMS());
+        }
     }
     
     return true;
