@@ -9,7 +9,7 @@ void KcpObject::S_HandleAccept()
     NFUINT32 ack = NFKcp::KcpProtoType::ACK;
     memcpy(chacheBytes,(NFUINT8*)&ack,4);
     memcpy(chacheBytes+4,(NFUINT8*)&Id,4);
-    memcpy(chacheBytes+8,(NFUINT8*)&reqConn,4);
+    memcpy(chacheBytes+8,(NFUINT8*)&reqCId,4);
     nfKcp->Send(&remoteEp,(char*)chacheBytes,12);
 }
 
@@ -70,12 +70,12 @@ void KcpObject::S_Disconnect()
         mKcpOnDisconnectCB();
     }
 
-    KcpObject *kc = nfKcp->reqkcpObject.find(reqConn)->second;
+    KcpObject *kc = nfKcp->reqkcpObject.find(reqCId)->second;
     if(kc)
     {
         if(kc == this)
         {
-            nfKcp->reqkcpObject.erase(reqConn);
+            nfKcp->reqkcpObject.erase(reqCId);
         }
     }
 

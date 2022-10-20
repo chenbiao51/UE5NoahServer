@@ -35,7 +35,7 @@ public:
     KcpObject(uint32_t reqconn,NFSOCK sockfd,const sockaddr_in remotesocket) //Client
     {
         this->mbServer = false;
-        this->reqConn = reqconn;
+        this->reqCId = reqconn;
         this->mSocketFd = sockfd;
         this->remoteEp = remotesocket;
     
@@ -46,7 +46,7 @@ public:
     {
         this->mbServer = true;
         this->Id = newid;
-        this->reqConn = reqconn;
+        this->reqCId = reqconn;
         this->remoteEp = remotesocket;
         this->nfKcp = (NFKcp*)nfkcp;
 
@@ -204,7 +204,7 @@ public:
    bool mbServer;     //Is a Server or Client
    bool isConnected = false;
    NFUINT32 Id;
-   NFUINT32 reqConn;
+   NFUINT32 reqCId;
    NFKcp* nfKcp;
    sockaddr_in remoteEp;
    NFSOCK mSocketFd;

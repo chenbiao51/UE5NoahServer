@@ -728,7 +728,7 @@ void NFKcp::S_HandleRecv(const uint32_t& cid,const sockaddr_in* remoteaddr,const
         bc = reqkcpObject.find(coonid)!= reqkcpObject.end();
     }while(bc);
     KcpObject* kcpObject = new KcpObject(coonid,mSocketFd,addr);
-    reqkcpObject.insert(std::map<NFUINT32, KcpObject*>::value_type(kcpObject->reqConn, kcpObject));
+    reqkcpObject.insert(std::map<NFUINT32, KcpObject*>::value_type(kcpObject->reqCId, kcpObject));
     return kcpObject;
  }
 
