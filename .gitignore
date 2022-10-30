@@ -67,6 +67,8 @@
 /Dependencies/lua
 /Dependencies/protobuf
 
+/NFComm/NFTsScriptPlugin/nodejs
+
 /cmake-build-debug/*
 /cmake-build-release/*
 /build/*
