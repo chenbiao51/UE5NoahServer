@@ -43,6 +43,13 @@ if (APPLE)
 		${SolutionDir}/Dependencies/vcpkg/installed/x64-osx/include/SDL2
 		${SolutionDir}/Dependencies/vcpkg/installed/x64-osx/include/google/protobuf/ 
 		${SolutionDir}/Dependencies/vcpkg/installed/x64-osx/include/google/protobuf/src/
+		
+		${CMAKE_SOURCE_DIR}/Dependencies/nodejs/src/
+		${CMAKE_SOURCE_DIR}/Dependencies/nodejs/include/
+		${CMAKE_SOURCE_DIR}/Dependencies/nodejs/deps/v8/include/
+		${CMAKE_SOURCE_DIR}/Dependencies/nodejs/deps/uv/include/
+		${CMAKE_SOURCE_DIR}/Dependencies/puerts/include/
+
 		/usr/local/include/
 		/usr/local/include/libbson-1.0/
 		/usr/local/include/libmongoc-1.0/
@@ -61,6 +68,13 @@ elseif(UNIX)
 		${SolutionDir}/Dependencies/vcpkg/installed/x64-linux/include/SDL2
 		${SolutionDir}/Dependencies/vcpkg/installed/x64-linux/include/google/protobuf/ 
 		${SolutionDir}/Dependencies/vcpkg/installed/x64-linux/include/google/protobuf/src/
+
+		${CMAKE_SOURCE_DIR}/Dependencies/nodejs/src/
+		${CMAKE_SOURCE_DIR}/Dependencies/nodejs/include/
+		${CMAKE_SOURCE_DIR}/Dependencies/nodejs/deps/v8/include/
+		${CMAKE_SOURCE_DIR}/Dependencies/nodejs/deps/uv/include/
+		${CMAKE_SOURCE_DIR}/Dependencies/puerts/include/
+
 		/usr/local/include/
 		/usr/local/include/libbson-1.0/
 		/usr/local/include/libmongoc-1.0/
@@ -78,6 +92,13 @@ else()
 		${SolutionDir}/Dependencies/vcpkg/installed/x64-windows-static/include/SDL2
 		${SolutionDir}/Dependencies/vcpkg/installed/x64-windows-static/include/google/protobuf/ 
 		${SolutionDir}/Dependencies/vcpkg/installed/x64-windows-static/include/google/protobuf/src/
+        
+		${CMAKE_SOURCE_DIR}/Dependencies/nodejs/src/
+		${CMAKE_SOURCE_DIR}/Dependencies/nodejs/include/
+		${CMAKE_SOURCE_DIR}/Dependencies/nodejs/deps/v8/include/
+		${CMAKE_SOURCE_DIR}/Dependencies/nodejs/deps/uv/include/
+		${CMAKE_SOURCE_DIR}/Dependencies/puerts/include/
+
 		/usr/local/include/
 		/usr/local/include/libbson-1.0/
 		/usr/local/include/libmongoc-1.0/
