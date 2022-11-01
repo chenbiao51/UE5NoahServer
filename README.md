@@ -10,7 +10,9 @@ Origin https://github.com/ketoo/NoahGameFrame.git
 - Mongodb
 - Luban
 
+##To Do
 
+-增加TypeScript脚本
 
 ## Tutorial && Documents
 
