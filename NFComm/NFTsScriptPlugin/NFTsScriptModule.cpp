@@ -22,12 +22,16 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 */
-
-
+#include <node.h>
+#include "uv.h"
+#include <iostream>
+#include <string>
 #include <assert.h>
 #include "NFTsScriptModule.h"
 #include "NFTsScriptPlugin.h"
 #include "NFComm/NFPluginModule/NFIKernelModule.h"
+#include "Dependencies/puerts/include/Binding.hpp" 
+#include "Dependencies/puerts/include/CppObjectMapper.h"
 
 #define TRY_RUN_GLOBAL_SCRIPT_FUN0(strFuncName)   try {LuaIntf::LuaRef func(mLuaContext, strFuncName);  func.call<LuaIntf::LuaRef>(); }   catch (LuaIntf::LuaException& e) { cout << e.what() << endl; }
 #define TRY_RUN_GLOBAL_SCRIPT_FUN1(strFuncName, arg1)  try {LuaIntf::LuaRef func(mLuaContext, strFuncName);  func.call<LuaIntf::LuaRef>(arg1); }catch (LuaIntf::LuaException& e) { cout << e.what() << endl; }

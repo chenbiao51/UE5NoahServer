@@ -43,15 +43,13 @@
 #include "NFComm/NFPluginModule/NFINetClientModule.h"
 #include "NFComm/NFPluginModule/NFILogModule.h"
 
-class NFITsScriptModule
-		: public NFIModule
+class NFITsScriptModule : public NFIModule
 {
 public:
 
 };
 
-class NFTsScriptModule
-    : public NFITsScriptModule
+class NFTsScriptModule : public NFITsScriptModule
 {
 public:
     NFTsScriptModule(NFIPluginManager* p)
