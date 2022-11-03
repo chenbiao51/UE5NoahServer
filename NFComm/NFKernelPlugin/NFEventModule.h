@@ -32,8 +32,7 @@
 #include "NFComm/NFPluginModule/NFIEventModule.h"
 #include "NFComm/NFPluginModule/NFIKernelModule.h"
 
-class NFEventModule
-    : public NFIEventModule
+class NFEventModule : public NFIEventModule
 {
 public:
     NFEventModule(NFIPluginManager* p)

@@ -29,8 +29,7 @@
 #include <iostream>
 #include "NFIModule.h"
 
-class NFIEventModule
-    : public NFIModule
+class NFIEventModule : public NFIModule
 {
 public:
 protected:
