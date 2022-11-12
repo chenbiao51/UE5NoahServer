@@ -24,8 +24,8 @@
 */
 
 
-#ifndef NF_LUA_SCRIPT_MODULE_H
-#define NF_LUA_SCRIPT_MODULE_H
+#ifndef NF_TS_SCRIPT_MODULE_H
+#define NF_TS_SCRIPT_MODULE_H
 
 #ifdef min
 #undef min
@@ -42,51 +42,18 @@
 #include "NFComm/NFPluginModule/NFIElementModule.h"
 #include "NFComm/NFPluginModule/NFINetClientModule.h"
 #include "NFComm/NFPluginModule/NFILogModule.h"
-#include "NFLuaPBModule.h"
-/*
-void call0(lua_State* lua_state,const char* name)
-{
-	lua_getglobal(lua_state, name);
-	if (lua_isfunction(lua_state, -1))
-	{
-		lua_pcall(lua_state, 0, 0, 0);
-	}
-}
+#include "NFJsPBModule.h"
 
-template<typename T1>
-void call1(lua_State* lua_state,const char* name, T1 arg1)
-{
-	lua_getglobal(lua_state, name);
-	if (lua_isfunction(lua_state, -1))
-	{
-		luabridge::Stack<T1>::push(lua_state, arg1);
-		lua_pcall(lua_state, 1, 0, 0);
-	}
-}
-
-template<typename T1, typename T2>
-void call2(lua_State* lua_state,const char* name, T1 arg1, T2 arg2)
-{
-	lua_getglobal(lua_state, name);
-	if (lua_isfunction(lua_state, -1))
-	{
-		luabridge::Stack<T1>::push(lua_state, arg1);
-		luabridge::Stack<T2>::push(lua_state, arg2);
-		lua_pcall(lua_state, 2, 0, 0);
-	}
-}
-*/
-
-class NFILuaScriptModule: public NFIModule
+class NFIJsScriptModule : public NFIModule
 {
 public:
 
 };
 
-class NFLuaScriptModule: public NFILuaScriptModule
+class NFJsScriptModule : public NFIJsScriptModule
 {
 public:
-    NFLuaScriptModule(NFIPluginManager* p)
+    NFJsScriptModule(NFIPluginManager* p)
     {
         m_bIsExecute = true;
         pPluginManager = p;
@@ -247,7 +214,7 @@ protected:
     NFINetClientModule* m_pNetClientModule;
     NFINetModule* m_pNetModule;
     NFILogModule* m_pLogModule;
-	NFILuaPBModule* m_pLuaPBModule;
+	NFIJsPBModule* m_pJsPBModule;
 	
 protected:
     int64_t mnTime;

@@ -24,8 +24,8 @@
 */
 
 
-#ifndef NF_LUA_PB_MODULE_H
-#define NF_LUA_PB_MODULE_H
+#ifndef NF_JS_PB_MODULE_H
+#define NF_JS_PB_MODULE_H
 
 #define LUAINTF_LINK_LUA_COMPILED_IN_CXX 0
 
@@ -55,17 +55,17 @@ public:
 	}
 };
 
-class NFILuaPBModule : public NFIModule
+
+class NFIJsPBModule : public NFIModule
 {
 public:
 	virtual void ImportProtoFile(const std::string& strFile) = 0;
 };
 
-class NFLuaPBModule
-    : public NFILuaPBModule
+class NFJsPBModule : public NFIJsPBModule
 {
 public:
-    NFLuaPBModule(NFIPluginManager* p)
+    NFJsPBModule(NFIPluginManager* p)
     {
         pPluginManager = p;
     }
@@ -81,12 +81,14 @@ public:
 
 	virtual void ImportProtoFile(const std::string& strFile);
 
+
+    LuaIntf::LuaRef Decode(const std::string& strMsgTypeName, const std::string& strData);
+	const std::string Encode(const std::string& strMsgTypeName, const LuaIntf::LuaRef& luaTable);
 protected:
 	void SetLuaState(lua_State* pState);
 	void PrintMessage(const google::protobuf::Message& messag, const bool bEncode);
 
-	LuaIntf::LuaRef Decode(const std::string& strMsgTypeName, const std::string& strData);
-	const std::string Encode(const std::string& strMsgTypeName, const LuaIntf::LuaRef& luaTable);
+	
 
 	friend class NFLuaScriptModule;
 
