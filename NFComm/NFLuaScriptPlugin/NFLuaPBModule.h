@@ -61,8 +61,7 @@ public:
 	virtual void ImportProtoFile(const std::string& strFile) = 0;
 };
 
-class NFLuaPBModule
-    : public NFILuaPBModule
+class NFLuaPBModule : public NFILuaPBModule
 {
 public:
     NFLuaPBModule(NFIPluginManager* p)
