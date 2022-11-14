@@ -79,8 +79,7 @@ int RunNodeInstance(MultiIsolatePlatform* platform,
   int exit_code = 0;
 
   std::vector<std::string> errors;
-  std::unique_ptr<CommonEnvironmentSetup> setup =
-      CommonEnvironmentSetup::Create(platform, &errors, args, exec_args);
+  std::unique_ptr<CommonEnvironmentSetup> setup =   CommonEnvironmentSetup::Create(platform, &errors, args, exec_args);
   if (!setup) {
     for (const std::string& err : errors)
       fprintf(stderr, "%s: %s\n", args[0].c_str(), err.c_str());
