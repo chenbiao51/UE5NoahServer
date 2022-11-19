@@ -21,8 +21,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_Guid__: boolean;
         
@@ -58,8 +58,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_Box2D__: boolean;
         
@@ -91,8 +91,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_Color__: boolean;
         
@@ -145,8 +145,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_LinearColor__: boolean;
         
@@ -220,8 +220,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_Quat__: boolean;
         
@@ -277,8 +277,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_Rotator__: boolean;
         
@@ -375,8 +375,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_Transform__: boolean;
         
@@ -498,8 +498,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_Vector__: boolean;
         
@@ -562,8 +562,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_Vector2D__: boolean;
         
@@ -615,8 +615,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_Vector4__: boolean;
         
@@ -651,8 +651,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_IntPoint__: boolean;
         
@@ -685,8 +685,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_IntVector__: boolean;
         
@@ -697,8 +697,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_FMatrix__: boolean;
         
@@ -710,8 +710,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_FSlot__: boolean;
         
@@ -723,8 +723,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_FArchive__: boolean;
         
@@ -735,8 +735,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_TSizedDefaultAllocatorT__: boolean;
         
@@ -747,8 +747,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_FPlane__: boolean;
         
@@ -759,8 +759,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_FFloat16Color__: boolean;
         
@@ -771,8 +771,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_UPackageMap__: boolean;
         
@@ -783,8 +783,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_FIntVector4__: boolean;
         
@@ -795,8 +795,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_VectorRegister__: boolean;
         
@@ -807,8 +807,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_ScalarRegister__: boolean;
         
@@ -819,8 +819,8 @@ declare module "ue" {
         /**
          * @deprecated use StaticStruct instead.
          */
-        static StaticClass(): ScriptStruct;
-        static StaticStruct(): ScriptStruct;
+        // static StaticClass(): ScriptStruct;
+        // static StaticStruct(): ScriptStruct;
         
         private __tid_FOutputDevice__: boolean;
         

@@ -6,7 +6,7 @@
 */
 
 declare module "puerts" {
-    import {Object, Class, $Delegate} from "ue"
+    import {$Delegate} from "ue"
     
     interface $Ref<T> {
         __doNoAccess: T
@@ -39,23 +39,23 @@ declare module "puerts" {
     
     //function requestJitModuleMethod(moduleName: string, methodName: string, callback: (err: Error, result: any)=> void, ... args: any[]): void;
     
-    function makeUClass(ctor: { new(): Object }): Class;
+    //function makeUClass(ctor: { new(): Object }): Class;
     
     function blueprint<T extends {
         new (...args:any[]): Object;
     }>(path:string): T;
 
-    namespace blueprint {
-        type MixinConfig = { objectTakeByNative?:boolean, inherit?:boolean, generatedClass?: Class, noMixinedWarning?:boolean};
-        function tojs<T extends typeof Object>(cls:Class): T;
-        function mixin<T extends typeof Object, R extends InstanceType<T>>(to:T, mixinMethods:new (...args: any) => R, config?: MixinConfig) : {
-            new (Outer?: Object, Name?: string, ObjectFlags?: number) : R;
-            StaticClass(): Class;
-        };
-        function unmixin<T extends typeof Object>(to:T): void
-        function load(cls: any): void
-        function unload(cls: any): void
-    }
+    // namespace blueprint {
+    //     type MixinConfig = { objectTakeByNative?:boolean, inherit?:boolean, generatedClass?: Class, noMixinedWarning?:boolean};
+    //     function tojs<T extends typeof Object>(cls:Class): T;
+    //     function mixin<T extends typeof Object, R extends InstanceType<T>>(to:T, mixinMethods:new (...args: any) => R, config?: MixinConfig) : {
+    //         new (Outer?: Object, Name?: string, ObjectFlags?: number) : R;
+    //         StaticClass(): Class;
+    //     };
+    //     function unmixin<T extends typeof Object>(to:T): void
+    //     function load(cls: any): void
+    //     function unload(cls: any): void
+    // }
     
     function on(eventType: string, listener: Function, prepend?: boolean) : void;
     

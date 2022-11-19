@@ -105,11 +105,11 @@ declare module "ue" {
         T extends {new (...args:any[]): infer R} ? R :
         never;
 
-    type SupportedContainerKVType = BuiltinBool | BuiltinByte | BuiltinInt | BuiltinFloat | BuiltinInt64 | BuiltinString | BuiltinText | BuiltinName | {StaticClass(): Class} | {StaticStruct(): ScriptStruct} | {__typeKeyDoNoAccess: any}
+    //type SupportedContainerKVType = BuiltinBool | BuiltinByte | BuiltinInt | BuiltinFloat | BuiltinInt64 | BuiltinString | BuiltinText | BuiltinName | {StaticClass(): Class} | {StaticStruct(): ScriptStruct} | {__typeKeyDoNoAccess: any}
 
-    function NewArray<T extends SupportedContainerKVType>(t: T): TArray<ContainerKVType<T>>;
-    function NewSet<T extends SupportedContainerKVType>(t: T): TSet<ContainerKVType<T>>;
-    function NewMap<TKey extends SupportedContainerKVType, TValue extends SupportedContainerKVType>(k: TKey, v: TValue): TMap<ContainerKVType<TKey>, ContainerKVType<TValue>>;
+    // function NewArray<T extends SupportedContainerKVType>(t: T): TArray<ContainerKVType<T>>;
+    // function NewSet<T extends SupportedContainerKVType>(t: T): TSet<ContainerKVType<T>>;
+    // function NewMap<TKey extends SupportedContainerKVType, TValue extends SupportedContainerKVType>(k: TKey, v: TValue): TMap<ContainerKVType<TKey>, ContainerKVType<TValue>>;
     
     type DataPropertyNames<T> = {
         [K in keyof T]: T[K] extends (...args: any) => any ? never : K;
@@ -119,9 +119,9 @@ declare module "ue" {
         [P in DataPropertyNames<T>]: T[P] extends object ? DataPropertiesOnly<T[P]> : T[P]
     };
 
-    function NewObject(Cls: Class, Outer?: Object, Name?:string, ObjectFlags?: number): Object;
+    // function NewObject(Cls: Class, Outer?: Object, Name?:string, ObjectFlags?: number): Object;
     
-    function NewStruct(St: ScriptStruct): object;
+    // function NewStruct(St: ScriptStruct): object;
 
     function FNameLiteral(str:string):string;
     
@@ -142,10 +142,10 @@ declare module "ue" {
         [K in keyof T]: T[K];
     }
 
-    type TSoftClassPtr<T> = {
-        Get():Class;
-        LoadSynchronous(): Class;
-    }
+    // type TSoftClassPtr<T> = {
+    //     Get():Class;
+    //     LoadSynchronous(): Class;
+    // }
 
     class UInt64Ptr { }
 
