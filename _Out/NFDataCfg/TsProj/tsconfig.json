@@ -6,12 +6,12 @@
     "sourceMap": true,
     "experimentalDecorators": true,
     "typeRoots": [
-      "Plugins/Puerts/Typing",
+      // "Plugins/Puerts/Typing",
       "./node_modules/@types"
     ],
-    "outDir": "JavaScript"
+    "outDir": "./JavaScript"
   },
   "include": [
-    "TypeScript/**/*"
+    "./TypeScript/**/*"
   ]
 }
