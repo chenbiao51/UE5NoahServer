@@ -7,7 +7,8 @@
     "experimentalDecorators": true,
     "typeRoots": [
       // "Plugins/Puerts/Typing",
-      "./node_modules/@types"
+      "./node_modules/@types",
+      "./TypeScript/Typing",
     ],
     "outDir": "./JavaScript"
   },
