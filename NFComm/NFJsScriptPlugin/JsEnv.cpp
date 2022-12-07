@@ -6,7 +6,9 @@
  * which is part of this source code package.
  */
 
+#include <string>
 #include "JsEnv.h"
+//#include "NFComm/NFJsScriptPlugin/JsEnv.h"
 #include "JsEnvImpl.h"
 
 namespace puerts
@@ -18,13 +20,13 @@ FJsEnv::FJsEnv(const std::string& ScriptRoot)
 }
 
 FJsEnv::FJsEnv(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::shared_ptr<ILogger> InLogger, int InDebugPort,
-    std::function<void(const FString&)> InOnSourceLoadedCallback, void* InExternalRuntime, void* InExternalContext)
+    std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime, void* InExternalContext)
 {
     GameScript = std::make_unique<FJsEnvImpl>(
         std::move(InModuleLoader), InLogger, InDebugPort, InOnSourceLoadedCallback, InExternalRuntime, InExternalContext);
 }
 
-void FJsEnv::Start(const FString& ModuleName, const TArray<TPair<FString, UObject*>>& Arguments, bool IsScript)
+void FJsEnv::Start(const std::string& ModuleName, const TArray<TPair<std::string, UObject*>>& Arguments, bool IsScript)
 {
     GameScript->Start(ModuleName, Arguments, IsScript);
 }
@@ -66,7 +68,7 @@ void FJsEnv::RebindJs()
 }
 #endif
 
-FString FJsEnv::CurrentStackTrace()
+std::string FJsEnv::CurrentStackTrace()
 {
     return GameScript->CurrentStackTrace();
 }
@@ -76,19 +78,18 @@ void FJsEnv::InitExtensionMethodsMap()
     GameScript->InitExtensionMethodsMap();
 }
 
-void FJsEnv::ReloadModule(FName ModuleName, const FString& JsSource)
+void FJsEnv::ReloadModule(std::string ModuleName, const std::string& JsSource)
 {
     GameScript->ReloadModule(ModuleName, JsSource);
 }
 
-void FJsEnv::ReloadSource(const FString& Path, const std::string& JsSource)
+void FJsEnv::ReloadSource(const std::string& Path, const std::string& JsSource)
 {
     GameScript->ReloadSource(Path, JsSource);
 }
 
-void FJsEnv::OnSourceLoaded(std::function<void(const FString&)> Callback)
+void FJsEnv::OnSourceLoaded(std::function<void(const std::string&)> Callback)
 {
     GameScript->OnSourceLoaded(Callback);
 }
-
-}    // namespace puerts
+}

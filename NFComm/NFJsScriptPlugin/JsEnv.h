@@ -26,7 +26,8 @@
 
 namespace puerts
 {
-class JSENV_API IJsEnv
+
+class  IJsEnv
 {
 public:
     virtual void Start(const std::string& ModuleName, const TArray<TPair<std::string, UObject*>>& Arguments, bool IsScript) = 0;
@@ -65,13 +66,13 @@ public:
 class JSENV_API FJsEnv    // : public TSharedFromThis<FJsEnv> // only a wrapper
 {
 public:
-    explicit FJsEnv(const FString& ScriptRoot = TEXT("JavaScript"));
+    FJsEnv(const std::string& ScriptRoot = "JavaScript");
 
     FJsEnv(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::shared_ptr<ILogger> InLogger, int InDebugPort,
-        std::function<void(const FString&)> InOnSourceLoadedCallback = nullptr, void* InExternalRuntime = nullptr,
+        std::function<void(const std::string&)> InOnSourceLoadedCallback = nullptr, void* InExternalRuntime = nullptr,
         void* InExternalContext = nullptr);
 
-    void Start(const FString& ModuleName, const TArray<TPair<FString, UObject*>>& Arguments = TArray<TPair<FString, UObject*>>(),
+    void Start(const FString& ModuleName, const TArray<TPair<FString, UObject*>>& Arguments = TArray<TPair< std::string, UObject*>>(),
         bool IsScript = false);
 
     bool IdleNotificationDeadline(double DeadlineInSeconds);
@@ -89,20 +90,19 @@ public:
 
     void TryBindJs(const class UObjectBase* InObject);
 
-    void ReloadModule(FName ModuleName, const FString& JsSource);
+    void ReloadModule(FName ModuleName, const  std::string& JsSource);
 
-    void ReloadSource(const FString& Path, const std::string& JsSource);
+    void ReloadSource(const  std::string& Path, const std::string& JsSource);
 
-    void OnSourceLoaded(std::function<void(const FString&)> Callback);
+    void OnSourceLoaded(std::function<void(const  std::string&)> Callback);
 
     void RebindJs();
 
-    FString CurrentStackTrace();
+    std::string CurrentStackTrace();
 
     void InitExtensionMethodsMap();
 
 private:
     std::unique_ptr<IJsEnv> GameScript;
 };
-
-}    // namespace puerts
+}

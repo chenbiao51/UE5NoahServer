@@ -103,12 +103,11 @@
 #if !defined(ENGINE_INDEPENDENT_JSENV)
 #include "Engine/CollisionProfile.h"
 #endif
-
 namespace puerts
 {
-FJsEnvImpl::FJsEnvImpl(const FString& ScriptRoot)
-    : FJsEnvImpl(
-          std::make_shared<DefaultJSModuleLoader>(ScriptRoot), std::make_shared<FDefaultLogger>(), -1, nullptr, nullptr, nullptr)
+
+
+FJsEnvImpl::FJsEnvImpl(const FString& ScriptRoot): FJsEnvImpl( std::make_shared<DefaultJSModuleLoader>(ScriptRoot), std::make_shared<FDefaultLogger>(), -1, nullptr, nullptr, nullptr)
 {
 }
 
@@ -3984,4 +3983,5 @@ void FJsEnvImpl::DumpStatisticsLog(const v8::FunctionCallbackInfo<v8::Value>& In
     Logger->Info(StatisticsLog);
 #endif    // !WITH_QUICKJS
 }
-}    // namespace puerts
+
+}

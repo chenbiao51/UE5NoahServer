@@ -7,7 +7,9 @@
  */
 
 #pragma once
-
+#include <map>
+#include <string>
+#include <iostream>
 #include "JsEnv.h"
 #include "DynamicDelegateProxy.h"
 #include "StructWrapper.h"
@@ -49,9 +51,9 @@
 #else
 #define WITH_BACKING_STORE_AUTO_FREE 1
 #endif
-
 namespace puerts
 {
+
 class JSError
 {
 public:
@@ -624,7 +626,7 @@ private:
 
     std::map<void*, DelegateObjectInfo> DelegateMap;
 
-    TMap<UFunction*, TsFunctionInfo> TsFunctionMap;
+    std::map<UFunction*, TsFunctionInfo> TsFunctionMap;
 
     TMap<UFunction*, v8::UniquePersistent<v8::Function>> MixinFunctionMap;
 
@@ -682,4 +684,4 @@ private:
     };
 };
 
-}    // namespace puerts
+}
