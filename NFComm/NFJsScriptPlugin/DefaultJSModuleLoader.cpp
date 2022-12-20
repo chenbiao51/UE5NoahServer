@@ -6,6 +6,10 @@
  * which is part of this source code package.
  */
 #include <string>
+#include <vector>
+#include <cstdint>
+#include <algorithm>
+#include <iostream>
 #include "JSModuleLoader.h"
 #include "Misc/Paths.h"
 #include "Misc/FileHelper.h"
@@ -18,42 +22,93 @@
 
 namespace puerts
 {
+
+static void StringSplit(const std::string& str,const char split, std::vector<string>& res)
+{
+    if(str=="") return;
+    //
+    std::string strs = str+split;
+    size_t pos = strs.find(split);
+    //
+    while(pos!= strs.npos)
+    {
+        std::string temp = strs.substr(0,pos);
+        res.push_back(temp);
+        //
+        strs = strs.substr(pos+1,strs.size());
+        pos = strs.find(split);
+    }
+}
+
+static void StringSplit(const std::string& str,const std::string& split, std::vector<string>& res)
+{
+    if(str=="") return;
+    //
+    std::string strs = str+split;
+    size_t pos = strs.find(split);
+    int step = split.size();
+    //
+    while(pos!= strs.npos)
+    {
+        std::string temp = strs.substr(0,pos);
+        res.push_back(temp);
+        //
+        strs = strs.substr(pos+step,strs.size());
+        pos = strs.find(split);
+    }
+}
+
+static std::string Join(const std::vector<std::string>& strings,const std::string& separator)
+{
+    if(strings.empty())
+    {
+        return "";
+    }
+    std::string result = strings[0];
+    for(std::size_t i=1;i<strings.size();++i)
+    {
+        result +=separator + strings[i];
+    }
+    return result;
+}
+
+
 static std::string PathNormalize(const std::string& PathIn)
 {
-    TArray<std::string> PathFrags;
-    PathIn.ParseIntoArray(PathFrags, TEXT("/"));
-    Algo::Reverse(PathFrags);
-    TArray<std::string> NewPathFrags;
-    bool FromRoot = PathIn.StartsWith(TEXT("/"));
-    while (PathFrags.Num() > 0)
+    std::vector<std::string> PathFrags;
+    StringSplit(PathIn,"/",PathFrags);
+    std::reverse(PathFrags.begin(),PathFrags.end());
+    std::vector<std::string> NewPathFrags;
+    bool FromRoot = PathIn.find("/")==0;
+    while (PathFrags.size() > 0)
     {
-        std::string E = PathFrags.Pop();
-        if (E != TEXT("") && E != TEXT("."))
+        std::string E = PathFrags.pop_back();
+        if (E != "" && E != ".")
         {
-            if (E == TEXT("..") && NewPathFrags.Num() > 0 && NewPathFrags.Last() != TEXT(".."))
+            if (E == ".." && NewPathFrags.size() > 0 && NewPathFrags[NewPathFrags.size()-1] != "..")
             {
-                NewPathFrags.Pop();
+                NewPathFrags.pop_back();
             }
             else
             {
-                NewPathFrags.Push(E);
+                NewPathFrags.push_back(E);
             }
         }
     }
     if (FromRoot)
     {
-        return TEXT("/") + std::string::Join(NewPathFrags, TEXT("/"));
+        return "/" + Join(NewPathFrags, "/");
     }
     else
     {
-        return std::string::Join(NewPathFrags, TEXT("/"));
+        return Join(NewPathFrags,"/");
     }
 }
 
 bool DefaultJSModuleLoader::CheckExists(const std::string& PathIn, std::string& Path, std::string& AbsolutePath)
 {
     IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-    FString NormalizedPath = PathNormalize(PathIn);
+    std::string NormalizedPath = PathNormalize(PathIn);
     if (PlatformFile.FileExists(*NormalizedPath))
     {
         AbsolutePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*NormalizedPath);
@@ -116,22 +171,25 @@ bool DefaultJSModuleLoader::Search(const std::string& RequiredDir, const std::st
                SearchModuleInDir(FPaths::ProjectContentDir() / TEXT("JavaScript"), RequiredModule, Path, AbsolutePath));
 }
 
-bool DefaultJSModuleLoader::Load(const std::string& Path, TArray<uint8>& Content)
+bool DefaultJSModuleLoader::Load(const std::string& Path, std::string& Content)
 {
-    // return (FPaths::FileExists(FullPath) && FFileHelper::LoadFileToString(Content, *FullPath));
-    IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-    IFileHandle* FileHandle = PlatformFile.OpenRead(*Path);
-    if (FileHandle)
-    {
-        int len = FileHandle->Size();
-        Content.Reset(len + 2);
-        Content.AddUninitialized(len);
-        const bool Success = FileHandle->Read(Content.GetData(), len);
-        delete FileHandle;
-
-        return Success;
-    }
-    return false;
+     std::ifstream ifs(Path);
+     if(ifs)
+     {
+        std::stringstream buffer;
+        buffer<<ifs.rdbuf();
+        std::string filecontent(buffer.str());
+        Content = *filecontent;
+        ifs.close();
+        return true;
+     }
+     else
+     {
+        std::cout << "no find====>"<<Path << std::endl;
+     }
+     
+     return false;
+     
 }
 
 std::string& DefaultJSModuleLoader::GetScriptRoot()
