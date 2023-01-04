@@ -30,8 +30,7 @@
 #include "NFComm/NFPluginModule/NFIKernelModule.h"
 #include "NFComm/NFCore/NFPerformance.hpp"
 
-class NFLogModule
-    : public NFILogModule
+class NFLogModule: public NFILogModule
 {
 public:
 

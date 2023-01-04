@@ -108,12 +108,12 @@ public:
     static v8::Local<v8::String> ToV8StringFromFileContent(v8::Isolate* Isolate, const std::vector<uint8_t>& FileContent)
     {
         const uint8_t* Buffer = FileContent.data();
-        auto Size = FileContent.size();
+        int Size = FileContent.size();
 
         if (Size >= 2 && !(Size & 1) && ((Buffer[0] == 0xff && Buffer[1] == 0xfe) || (Buffer[0] == 0xfe && Buffer[1] == 0xff)))
         {
-            std::string Content;
-            FFileHelper::BufferToString(Content, Buffer, Size);
+            std::string Content(FileContent.begin(),FileContent.end());
+            //FFileHelper::BufferToString(Content, Buffer, Size);
             return ToV8String(Isolate, Content);
         }
         else
@@ -152,7 +152,7 @@ public:
         v8::Isolate::Scope IsolateScope(Isolate);
         v8::HandleScope HandleScope(Isolate);
         v8::String::Utf8Value Exception(Isolate, TryCatch->Exception());
-        std::string ExceptionStr(UTF8_TO_TCHAR(*Exception));
+        std::string ExceptionStr(*Exception);
         v8::Local<v8::Message> Message = TryCatch->Message();
         if (Message.IsEmpty())
         {
@@ -167,12 +167,12 @@ public:
             v8::String::Utf8Value FileName(Isolate, Message->GetScriptResourceName());
             int LineNum = Message->GetLineNumber(Context).FromJust();
             std::string FileNameStr(*FileName);
-            std::string LineNumStr = FString::FromInt(LineNum);
+            std::string LineNumStr = std::to_string(LineNum);
             std::string FileInfoStr;
-            FileInfoStr.Append(FileNameStr).Append(":").Append(LineNumStr).Append(": ").Append(ExceptionStr);
+            FileInfoStr.append(FileNameStr).append(":").append(LineNumStr).append(": ").append(ExceptionStr);
 
             std::string FinalReport;
-            FinalReport.Append(FileInfoStr).Append("\n");
+            FinalReport.append(FileInfoStr).append("\n");
 
             // 输出调用栈信息
             v8::Local<v8::Value> StackTrace;
@@ -180,7 +180,7 @@ public:
             {
                 v8::String::Utf8Value StackTraceVal(Isolate, StackTrace);
                 std::string StackTraceStr(*StackTraceVal);
-                FinalReport.Append("\n").Append(StackTraceStr);
+                FinalReport.append("\n").append(StackTraceStr);
             }
             return FinalReport;
         }
