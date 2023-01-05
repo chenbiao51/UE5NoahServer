@@ -10,20 +10,49 @@
 #include <cstdint>
 #include <algorithm>
 #include <iostream>
+#include <fstream>
+#include <filesystem>
+#include <cstring>
 #include "JSModuleLoader.h"
-#include "Misc/Paths.h"
-#include "Misc/FileHelper.h"
-#include "Algo/Reverse.h"
-#if (ENGINE_MAJOR_VERSION >= 5)
-#include "HAL/PlatformFileManager.h"
-#else
-#include "HAL/PlatformFilemanager.h"
-#endif
+
 
 namespace puerts
 {
 
-static void StringSplit(const std::string& str,const char split, std::vector<string>& res)
+bool EndsWith(const char* str ,const char* suffix ,bool ignoreCase=false)
+{
+    if(!str || !suffix ||*suffix='\0')
+    {
+        return false;
+    }
+    int strLen = std::strlen(str);
+    int suffixLen = std::strlen(suffix);
+    if(suffixLen>strLen)
+    {
+        return false;
+    }
+    const char* strPtr = str+strLen-suffixLen;
+    if(ignoreCase)
+    {
+        return !std::strcasecmp(strPtr,suffix);
+    }
+    else
+    {
+        return !std::strcmp(strPtr,suffix);
+    }
+    
+}
+
+static std::string GetExtension(const std::string& InPath,bool bIncludeDot)
+{
+    const size_t DotPos = InPath.find_last_of(".");
+    if(DotPos!=std::string::npos){
+        return InPath.substr(DotPos+(bIncludeDot?0:1));
+    }
+    return "";
+}
+
+static void StringSplit(const std::string& str,const char split, std::vector<std::string>& res)
 {
     if(str=="") return;
     //
@@ -40,7 +69,7 @@ static void StringSplit(const std::string& str,const char split, std::vector<str
     }
 }
 
-static void StringSplit(const std::string& str,const std::string& split, std::vector<string>& res)
+static void StringSplit(const std::string& str,const std::string& split, std::vector<std::string>& res)
 {
     if(str=="") return;
     //
@@ -82,7 +111,8 @@ static std::string PathNormalize(const std::string& PathIn)
     bool FromRoot = PathIn.find("/")==0;
     while (PathFrags.size() > 0)
     {
-        std::string E = PathFrags.pop_back();
+        std::string E = PathFrags.back();
+        PathFrags.pop_back();
         if (E != "" && E != ".")
         {
             if (E == ".." && NewPathFrags.size() > 0 && NewPathFrags[NewPathFrags.size()-1] != "..")
@@ -107,26 +137,25 @@ static std::string PathNormalize(const std::string& PathIn)
 
 bool DefaultJSModuleLoader::CheckExists(const std::string& PathIn, std::string& Path, std::string& AbsolutePath)
 {
-    IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
     std::string NormalizedPath = PathNormalize(PathIn);
-    if (PlatformFile.FileExists(*NormalizedPath))
+    std::ifstream File(NormalizedPath);
+    if(File.good())
     {
-        AbsolutePath = IFileManager::Get().ConvertToAbsolutePathForExternalAppForRead(*NormalizedPath);
         Path = NormalizedPath;
+        AbsolutePath = std::filesystem::absolute(NormalizedPath).string();
         return true;
     }
-
     return false;
 }
 
 bool DefaultJSModuleLoader::SearchModuleInDir(const std::string& Dir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath)
 {
-    if (FPaths::GetExtension(RequiredModule) == TEXT(""))
+    if (GetExtension(RequiredModule) == "")
     {
         return SearchModuleWithExtInDir(Dir, RequiredModule + ".js", Path, AbsolutePath) ||
                SearchModuleWithExtInDir(Dir, RequiredModule + ".mjs", Path, AbsolutePath) ||
-               SearchModuleWithExtInDir(Dir, RequiredModule / "index.js", Path, AbsolutePath) ||
-               SearchModuleWithExtInDir(Dir, RequiredModule / "package.json", Path, AbsolutePath);
+               SearchModuleWithExtInDir(Dir, RequiredModule + "/index.js", Path, AbsolutePath) ||
+               SearchModuleWithExtInDir(Dir, RequiredModule + "/package.json", Path, AbsolutePath);
     }
     else
     {
@@ -136,8 +165,7 @@ bool DefaultJSModuleLoader::SearchModuleInDir(const std::string& Dir, const std:
 
 bool DefaultJSModuleLoader::SearchModuleWithExtInDir(const std::string& Dir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath)
 {
-    return CheckExists(Dir / RequiredModule, Path, AbsolutePath) ||
-           (!Dir.EndsWith(TEXT("node_modules")) && CheckExists(Dir / TEXT("node_modules") / RequiredModule, Path, AbsolutePath));
+    return CheckExists(Dir+RequiredModule, Path, AbsolutePath) || (!EndsWith(Dir.c_str(),"node_modules",false) && CheckExists(Dir+"/node_modules/"+RequiredModule, Path, AbsolutePath));
 }
 
 bool DefaultJSModuleLoader::Search(const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath)
@@ -146,29 +174,28 @@ bool DefaultJSModuleLoader::Search(const std::string& RequiredDir, const std::st
     {
         return true;
     }
-    if (RequiredDir != TEXT("") && !RequiredModule.GetCharArray().Contains('/') && !RequiredModule.EndsWith(TEXT(".js")) &&
-        !RequiredModule.EndsWith(TEXT(".mjs")))
+    if (RequiredDir != "" && !(RequiredModule.find('/')!=std::string::npos) && !EndsWith(RequiredModule.c_str(),".js",true) &&!EndsWith(RequiredModule.c_str(),".mjs",true))
     {
         // 调用require的文件所在的目录往上找
-        TArray<FString> pathFrags;
-        RequiredDir.ParseIntoArray(pathFrags, TEXT("/"));
-        pathFrags.Pop();    // has try in "if (SearchModuleInDir(RequiredDir, RequiredModule, Path, AbsolutePath))"
-        while (pathFrags.Num() > 0)
+        std::vector<std::string> pathFrags;
+        StringSplit(RequiredDir,"/",pathFrags);
+        pathFrags.pop_back();    // has try in "if (SearchModuleInDir(RequiredDir, RequiredModule, Path, AbsolutePath))"
+        while (pathFrags.size() > 0)
         {
-            if (!pathFrags.Last().Equals(TEXT("node_modules")))
+            if (pathFrags.back()!="node_modules")
             {
-                if (SearchModuleInDir(std::string::Join(pathFrags, TEXT("/")), RequiredModule, Path, AbsolutePath))
+                if (SearchModuleInDir(Join(pathFrags, "/"), RequiredModule, Path, AbsolutePath))
                 {
                     return true;
                 }
             }
-            pathFrags.Pop();
+            pathFrags.pop_back();
         }
     }
 
     return SearchModuleInDir(FPaths::ProjectContentDir() / ScriptRoot, RequiredModule, Path, AbsolutePath) ||
-           (ScriptRoot != TEXT("JavaScript") &&
-               SearchModuleInDir(FPaths::ProjectContentDir() / TEXT("JavaScript"), RequiredModule, Path, AbsolutePath));
+           (ScriptRoot !="JavaScript" &&
+           SearchModuleInDir(FPaths::ProjectContentDir() / TEXT("JavaScript"), RequiredModule, Path, AbsolutePath));
 }
 
 bool DefaultJSModuleLoader::Load(const std::string& Path, std::string& Content)

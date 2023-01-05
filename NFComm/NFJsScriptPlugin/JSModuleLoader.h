@@ -17,7 +17,7 @@ class IJSModuleLoader
 public:
     virtual bool Search(const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath) = 0;
 
-    virtual bool Load(const std::string& Path, TArray<uint8>& Content) = 0;
+    virtual bool Load(const std::string& Path, std::string& Content) = 0;
 
     virtual std::string& GetScriptRoot() = 0;
 
@@ -35,7 +35,7 @@ public:
 
     virtual bool Search(const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath) override;
 
-    virtual bool Load(const std::string& Path, TArray<uint8>& Content) override;
+    virtual bool Load(const std::string& Path, std::string& Content) override;
 
     virtual std::string& GetScriptRoot() override;
 
