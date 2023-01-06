@@ -11,34 +11,25 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <filesystem>
 #include <cstring>
+#include <boost/algorithm/string.hpp>
 #include "JSModuleLoader.h"
 
 
 namespace puerts
 {
 
-bool EndsWith(const char* str ,const char* suffix ,bool ignoreCase=false)
+bool EndsWith(const std::string& str ,const std::string& suffix ,bool ignoreCase=false)
 {
-    if(!str || !suffix ||*suffix='\0')
-    {
-        return false;
-    }
-    int strLen = std::strlen(str);
-    int suffixLen = std::strlen(suffix);
-    if(suffixLen>strLen)
-    {
-        return false;
-    }
-    const char* strPtr = str+strLen-suffixLen;
     if(ignoreCase)
     {
-        return !std::strcasecmp(strPtr,suffix);
+        return boost::iends_with(str,suffix);
     }
     else
     {
-        return !std::strcmp(strPtr,suffix);
+        return boost::ends_with(str,suffix);
     }
     
 }
@@ -165,7 +156,7 @@ bool DefaultJSModuleLoader::SearchModuleInDir(const std::string& Dir, const std:
 
 bool DefaultJSModuleLoader::SearchModuleWithExtInDir(const std::string& Dir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath)
 {
-    return CheckExists(Dir+RequiredModule, Path, AbsolutePath) || (!EndsWith(Dir.c_str(),"node_modules",false) && CheckExists(Dir+"/node_modules/"+RequiredModule, Path, AbsolutePath));
+    return CheckExists(Dir+RequiredModule, Path, AbsolutePath) || (!EndsWith(Dir,"node_modules",false) && CheckExists(Dir+"/node_modules/"+RequiredModule, Path, AbsolutePath));
 }
 
 bool DefaultJSModuleLoader::Search(const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath)
@@ -174,7 +165,7 @@ bool DefaultJSModuleLoader::Search(const std::string& RequiredDir, const std::st
     {
         return true;
     }
-    if (RequiredDir != "" && !(RequiredModule.find('/')!=std::string::npos) && !EndsWith(RequiredModule.c_str(),".js",true) &&!EndsWith(RequiredModule.c_str(),".mjs",true))
+    if (RequiredDir != "" && !(RequiredModule.find('/')!=std::string::npos) && !EndsWith(RequiredModule,".js",true) &&!EndsWith(RequiredModule,".mjs",true))
     {
         // 调用require的文件所在的目录往上找
         std::vector<std::string> pathFrags;
@@ -193,9 +184,8 @@ bool DefaultJSModuleLoader::Search(const std::string& RequiredDir, const std::st
         }
     }
 
-    return SearchModuleInDir(FPaths::ProjectContentDir() / ScriptRoot, RequiredModule, Path, AbsolutePath) ||
-           (ScriptRoot !="JavaScript" &&
-           SearchModuleInDir(FPaths::ProjectContentDir() / TEXT("JavaScript"), RequiredModule, Path, AbsolutePath));
+    return SearchModuleInDir(FPaths::ProjectContentDir() +"/"+ScriptRoot, RequiredModule, Path, AbsolutePath) ||
+           (ScriptRoot !="JavaScript" && SearchModuleInDir(FPaths::ProjectContentDir() +"/JavaScript", RequiredModule, Path, AbsolutePath));
 }
 
 bool DefaultJSModuleLoader::Load(const std::string& Path, std::string& Content)
@@ -206,7 +196,7 @@ bool DefaultJSModuleLoader::Load(const std::string& Path, std::string& Content)
         std::stringstream buffer;
         buffer<<ifs.rdbuf();
         std::string filecontent(buffer.str());
-        Content = *filecontent;
+        Content = filecontent;
         ifs.close();
         return true;
      }

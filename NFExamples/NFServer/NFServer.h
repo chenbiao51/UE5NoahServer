@@ -82,63 +82,6 @@
 #include "Tutorial/Tutorial6/Tutorial6.h"
 #include "Tutorial/Tutorial7/Tutorial7.h"
 
-
-#if NF_PLATFORM == NF_PLATFORM_WIN
-
-#pragma comment( lib, "NFCore.lib" )
-#pragma comment( lib, "NFMessageDefine.lib" )
-#pragma comment( lib, "NFNetPlugin.lib" )
-#pragma comment( lib, "NFActorPlugin.lib" )
-#pragma comment( lib, "NFConfigPlugin.lib" )
-#pragma comment( lib, "NFKernelPlugin.lib" )
-#pragma comment( lib, "NFLogPlugin.lib" )
-#pragma comment( lib, "NFLuaScriptPlugin.lib" )
-#pragma comment( lib, "NFNavigationPlugin.lib" )
-#pragma comment( lib, "NFNetPlugin.lib" )
-#pragma comment( lib, "NFNoSqlPlugin.lib" )
-#pragma comment( lib, "NFSecurityPlugin.lib" )
-#pragma comment( lib, "NFTestPlugin.lib" )
-#pragma comment( lib, "NFRenderPlugin.lib" )
-#pragma comment( lib, "NFBluePrintPlugin.lib" )
-#pragma comment( lib, "NFPluginLoader.lib" )
-
-#pragma comment( lib, "NFDBLogicPlugin.lib" )
-#pragma comment( lib, "NFDBNet_ClientPlugin.lib" )
-#pragma comment( lib, "NFDBNet_ServerPlugin.lib" )
-
-#pragma comment( lib, "NFGameServerPlugin.lib" )
-#pragma comment( lib, "NFGameServerNet_ClientPlugin.lib" )
-#pragma comment( lib, "NFGameServerNet_ServerPlugin.lib" )
-
-#pragma comment( lib, "NFLoginLogicPlugin.lib" )
-#pragma comment( lib, "NFLoginNet_ClientPlugin.lib" )
-#pragma comment( lib, "NFLoginNet_ServerPlugin.lib" )
-#pragma comment( lib, "NFLoginNet_HttpServerPlugin.lib" )
-
-#pragma comment( lib, "NFMasterServerPlugin.lib" )
-#pragma comment( lib, "NFMasterNet_ServerPlugin.lib" )
-#pragma comment( lib, "NFMasterNet_HttpServerPlugin.lib" )
-
-#pragma comment( lib, "NFProxyLogicPlugin.lib" )
-#pragma comment( lib, "NFProxyServerNet_ClientPlugin.lib" )
-#pragma comment( lib, "NFProxyServerNet_ServerPlugin.lib" )
-
-#pragma comment( lib, "NFWorldNet_ClientPlugin.lib" )
-#pragma comment( lib, "NFWorldNet_ServerPlugin.lib" )
-
-#pragma comment( lib, "NFChatPlugin.lib" )
-#pragma comment( lib, "NFInventoryPlugin.lib" )
-#pragma comment( lib, "NFConsumeManagerPlugin.lib" )
-
-#pragma comment( lib, "Tutorial1.lib" )
-#pragma comment( lib, "Tutorial2.lib" )
-#pragma comment( lib, "Tutorial3.lib" )
-#pragma comment( lib, "Tutorial4.lib" )
-#pragma comment( lib, "Tutorial5.lib" )
-#pragma comment( lib, "Tutorial6.lib" )
-#pragma comment( lib, "Tutorial7.lib" )
-
-#endif
 #endif
 
 
