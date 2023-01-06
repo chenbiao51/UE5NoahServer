@@ -14,26 +14,15 @@
 #include "StructWrapper.h"
 #include "DelegateWrapper.h"
 #include "V8Utils.h"
-#if !defined(ENGINE_INDEPENDENT_JSENV)
-#include "Engine/Engine.h"
-#endif
+
 #include "ObjectMapper.h"
 #include "JSLogger.h"
 #include "TickerDelegateWrapper.h"
 #include "Async/Async.h"
-#if !defined(ENGINE_INDEPENDENT_JSENV)
-#include "JSGeneratedClass.h"
-#include "JSAnimGeneratedClass.h"
-#include "JSWidgetGeneratedClass.h"
-#include "JSGeneratedFunction.h"
-#endif
+
 #include "JSClassRegister.h"
 #include "PromiseRejectCallback.hpp"
-#if !defined(ENGINE_INDEPENDENT_JSENV)
-#include "TypeScriptObject.h"
-#include "TypeScriptGeneratedClass.h"
-#include "Engine/UserDefinedEnum.h"
-#endif
+
 #include "ContainerMeta.h"
 
 #pragma warning(push, 0)
@@ -43,60 +32,7 @@
 
 #include "V8InspectorImpl.h"
 
-#if !defined(WITH_NODEJS)
-
-#if V8_MAJOR_VERSION < 8 && !defined(WITH_QUICKJS)
-
-#if PLATFORM_WINDOWS
-#include "Blob/Win64/NativesBlob.h"
-#include "Blob/Win64/SnapshotBlob.h"
-#elif PLATFORM_ANDROID_ARM
-#include "Blob/Android/armv7a/NativesBlob.h"
-#include "Blob/Android/armv7a/SnapshotBlob.h"
-#elif PLATFORM_ANDROID_ARM64
-#include "Blob/Android/arm64/NativesBlob.h"
-#include "Blob/Android/arm64/SnapshotBlob.h"
-#elif PLATFORM_MAC
-#include "Blob/macOS/NativesBlob.h"
-#include "Blob/macOS/SnapshotBlob.h"
-#elif PLATFORM_IOS
-#include "Blob/iOS/arm64/NativesBlob.h"
-#include "Blob/iOS/arm64/SnapshotBlob.h"
-#elif PLATFORM_LINUX
-#include "Blob/Linux/NativesBlob.h"
-#include "Blob/Linux/SnapshotBlob.h"
-#endif
-
-#else
-
-#if PLATFORM_WINDOWS
-#include "Blob/Win64MD/SnapshotBlob.h"
-#elif PLATFORM_ANDROID_ARM
-#include "Blob/Android/armv7a/SnapshotBlob.h"
-#elif PLATFORM_ANDROID_ARM64
-#include "Blob/Android/arm64/SnapshotBlob.h"
-#elif PLATFORM_MAC
-#include "Blob/macOS/SnapshotBlob.h"
-#elif PLATFORM_IOS
-#include "Blob/iOS/arm64/SnapshotBlob.h"
-#elif PLATFORM_LINUX
-#include "Blob/Linux/SnapshotBlob.h"
-#endif
-
-#endif
-
-#else
-#if PLATFORM_WINDOWS
-#include <windows.h>
-#elif PLATFORM_LINUX
 #include <sys/epoll.h>
-#elif PLATFORM_MAC
-#include <sys/select.h>
-#include <sys/sysctl.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#endif
-#endif
 
 #include <functional>
 #include <string>

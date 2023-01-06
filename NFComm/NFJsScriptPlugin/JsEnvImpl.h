@@ -30,9 +30,7 @@
 #include "ObjectCacheNode.h"
 #include <unordered_map>
 
-#if ENGINE_MINOR_VERSION >= 25 || ENGINE_MAJOR_VERSION > 4
-#include "UObject/WeakFieldPtr.h"
-#endif
+
 
 #pragma warning(push, 0)
 #include "libplatform/libplatform.h"
@@ -41,12 +39,11 @@
 
 #include "V8InspectorImpl.h"
 
-#if defined(WITH_NODEJS)
 #pragma warning(push, 0)
 #include "node.h"
 #include "uv.h"
 #pragma warning(pop)
-#endif
+
 
 #if V8_MAJOR_VERSION < 8 || defined(WITH_QUICKJS) || defined(WITH_NODEJS) || (WITH_EDITOR && !defined(FORCE_USE_STATIC_V8_LIB))
 #define WITH_BACKING_STORE_AUTO_FREE 0
