@@ -88,7 +88,7 @@ NFPluginManager::NFPluginManager() : NFIPluginManager()
 	mGetFileContentFunctor = nullptr;
 
 	configPath = "../";
-
+    nfDataCfgPath = "../NFDataCfg";
 
 	configName = "NFDataCfg/Debug/Plugin.xml";
 
@@ -425,6 +425,17 @@ inline const std::string & NFPluginManager::GetConfigPath() const
 inline void NFPluginManager::SetConfigPath(const std::string & strPath)
 {
 	configPath = strPath;
+}
+
+
+inline const std::string & NFPluginManager::GetNFDataCfgPath() const
+{
+	return nfDataCfgPath;
+}
+
+inline void NFPluginManager::SetNFDataCfgPath(const std::string & strPath)
+{
+	nfDataCfgPath = strPath;
 }
 
 void NFPluginManager::SetConfigName(const std::string & fileName)

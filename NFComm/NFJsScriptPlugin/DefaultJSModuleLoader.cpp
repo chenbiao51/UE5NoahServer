@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <cstring>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 #include "JSModuleLoader.h"
 
 
@@ -133,7 +134,7 @@ bool DefaultJSModuleLoader::CheckExists(const std::string& PathIn, std::string& 
     if(File.good())
     {
         Path = NormalizedPath;
-        AbsolutePath = std::filesystem::absolute(NormalizedPath).string();
+        AbsolutePath = boost::filesystem::absolute(NormalizedPath).string();
         return true;
     }
     return false;
@@ -141,7 +142,7 @@ bool DefaultJSModuleLoader::CheckExists(const std::string& PathIn, std::string& 
 
 bool DefaultJSModuleLoader::SearchModuleInDir(const std::string& Dir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath)
 {
-    if (GetExtension(RequiredModule) == "")
+    if (GetExtension(RequiredModule,false) == "")
     {
         return SearchModuleWithExtInDir(Dir, RequiredModule + ".js", Path, AbsolutePath) ||
                SearchModuleWithExtInDir(Dir, RequiredModule + ".mjs", Path, AbsolutePath) ||
@@ -159,7 +160,7 @@ bool DefaultJSModuleLoader::SearchModuleWithExtInDir(const std::string& Dir, con
     return CheckExists(Dir+RequiredModule, Path, AbsolutePath) || (!EndsWith(Dir,"node_modules",false) && CheckExists(Dir+"/node_modules/"+RequiredModule, Path, AbsolutePath));
 }
 
-bool DefaultJSModuleLoader::Search(const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath)
+bool DefaultJSModuleLoader::Search(const std::string& nfdatacfg,const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath)
 {
     if (SearchModuleInDir(RequiredDir, RequiredModule, Path, AbsolutePath))
     {
@@ -184,8 +185,8 @@ bool DefaultJSModuleLoader::Search(const std::string& RequiredDir, const std::st
         }
     }
 
-    return SearchModuleInDir(FPaths::ProjectContentDir() +"/"+ScriptRoot, RequiredModule, Path, AbsolutePath) ||
-           (ScriptRoot !="JavaScript" && SearchModuleInDir(FPaths::ProjectContentDir() +"/JavaScript", RequiredModule, Path, AbsolutePath));
+    return SearchModuleInDir(nfdatacfg +"/"+ScriptRoot, RequiredModule, Path, AbsolutePath) ||
+           (ScriptRoot !="JavaScript" && SearchModuleInDir(nfdatacfg +"/JavaScript", RequiredModule, Path, AbsolutePath));
 }
 
 bool DefaultJSModuleLoader::Load(const std::string& Path, std::string& Content)

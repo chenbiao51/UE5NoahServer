@@ -34,8 +34,7 @@
 #include "NFComm/NFPluginModule/NFIModule.h"
 #include "NFComm/NFPluginModule/NFIPluginManager.h"
 
-class NFPluginManager
-    : public NFIPluginManager
+class NFPluginManager: public NFIPluginManager
 {
 public:
     NFPluginManager();
@@ -103,6 +102,9 @@ public:
     virtual NFINT64 GetInitTime() const override;
     virtual NFINT64 GetNowTime() const override;
 
+    virtual const std::string& GetNFDataCfgPath() const override;
+    virtual void SetNFDataCfgPath(const std::string & strPath) override;
+
     virtual const std::string& GetConfigPath() const override;
     virtual void SetConfigPath(const std::string & strPath) override;
 
@@ -157,6 +159,7 @@ private:
 	NFINT64 mnCPUCount = 8;
 
     std::string configPath;
+    std::string nfDataCfgPath;
     std::string configName;
     std::string appName;
     std::string logConfigName;

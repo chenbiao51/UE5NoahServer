@@ -218,6 +218,9 @@ public:
     virtual NFINT64 GetInitTime() const = 0;
     virtual NFINT64 GetNowTime() const = 0;
 
+	virtual const std::string& GetNFDataCfgPath() const = 0;
+	virtual void SetNFDataCfgPath(const std::string & strPath) = 0;
+
 	virtual const std::string& GetConfigPath() const = 0;
 	virtual void SetConfigPath(const std::string & strPath) = 0;
 
