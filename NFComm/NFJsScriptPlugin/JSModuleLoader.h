@@ -7,7 +7,7 @@ namespace puerts
 class IJSModuleLoader
 {
 public:
-    virtual bool Search(const std::string& nfdatacfg,const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath) = 0;
+    virtual bool Search(const std::string& nfdatacfgPath,const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath) = 0;
 
     virtual bool Load(const std::string& Path, std::string& Content) = 0;
 
@@ -25,7 +25,7 @@ public:
     {
     }
 
-    virtual bool Search(const std::string& nfdatacfg,const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath) override;
+    virtual bool Search(const std::string& nfdatacfgPath,const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath) override;
 
     virtual bool Load(const std::string& Path, std::string& Content) override;
 

@@ -28,8 +28,7 @@
 
 #include "NFIModule.h"
 
-class NFILogModule
-    : public NFIModule
+class NFILogModule: public NFIModule
 {
 
 public:

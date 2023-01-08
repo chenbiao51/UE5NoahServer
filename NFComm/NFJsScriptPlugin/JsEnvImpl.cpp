@@ -16,7 +16,6 @@
 #include "V8Utils.h"
 
 #include "ObjectMapper.h"
-#include "JSLogger.h"
 #include "TickerDelegateWrapper.h"
 #include "Async/Async.h"
 
@@ -42,7 +41,7 @@ namespace puerts
 {
 
 
-FJsEnvImpl::FJsEnvImpl(const std::string& ScriptRoot): FJsEnvImpl( std::make_shared<DefaultJSModuleLoader>(ScriptRoot), std::make_shared<FDefaultLogger>(), -1, nullptr, nullptr, nullptr)
+FJsEnvImpl::FJsEnvImpl(const std::string& ScriptRoot): FJsEnvImpl( std::make_shared<DefaultJSModuleLoader>(ScriptRoot), std::make_shared<NFLogModule>(), -1, nullptr, nullptr, nullptr)
 {
 }
 
@@ -167,7 +166,7 @@ void FJsEnvImpl::UvRunOnce()
     uv_run(&NodeUVLoop, UV_RUN_NOWAIT);
     if (TryCatch.HasCaught())
     {
-        Logger->Error(FString::Printf(TEXT("uv_run throw: %s"), *FV8Utils::TryCatchToString(Isolate, &TryCatch)));
+        Logger->InfoError("uv_run throw:" +FV8Utils::TryCatchToString(Isolate, &TryCatch));
     }
     else
     {
@@ -224,7 +223,7 @@ void FJsEnvImpl::StopPolling()
 }
 
 
-FJsEnvImpl::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::shared_ptr<ILogger> InLogger, int InDebugPort,std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime, void* InExternalContext)
+FJsEnvImpl::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::shared_ptr<NFILogModule> InLogger, int InDebugPort,std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime, void* InExternalContext)
 {
     GUObjectArray.AddUObjectDeleteListener(static_cast<FUObjectArray::FUObjectDeleteListener*>(this));
 
@@ -245,7 +244,8 @@ FJsEnvImpl::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::sha
     const int Ret = uv_loop_init(&NodeUVLoop);
     if (Ret != 0)
     {
-        Logger->Error(FString::Printf(TEXT("Failed to initialize loop: %s\n"), UTF8_TO_TCHAR(uv_err_name(Ret))));
+        std::string errname = uv_err_name(Ret);
+        Logger->InfoError("Failed to initialize loop: "+errname+"\n");
         return;
     }
 
@@ -335,7 +335,6 @@ FJsEnvImpl::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::sha
     Isolate->SetPromiseRejectCallback(&PromiseRejectCallback<FJsEnvImpl>);
     Global->Set(Context, FV8Utils::ToV8String(Isolate, "__tgjsSetPromiseRejectCallback"),v8::FunctionTemplate::New(Isolate, &SetPromiseRejectCallback<FJsEnvImpl>)->GetFunction(Context).ToLocalChecked()).Check();
 
-    //#if !defined(WITH_NODEJS)
     MethodBindingHelper<&FJsEnvImpl::SetTimeout>::Bind(Isolate, Context, Global, "setTimeout", This);
 
     MethodBindingHelper<&FJsEnvImpl::ClearInterval>::Bind(Isolate, Context, Global, "clearTimeout", This);
@@ -343,9 +342,6 @@ FJsEnvImpl::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::sha
     MethodBindingHelper<&FJsEnvImpl::SetInterval>::Bind(Isolate, Context, Global, "setInterval", This);
 
     MethodBindingHelper<&FJsEnvImpl::ClearInterval>::Bind(Isolate, Context, Global, "clearInterval", This);
-    //#endif
-
-    MethodBindingHelper<&FJsEnvImpl::DumpStatisticsLog>::Bind(Isolate, Context, Global, "dumpStatisticsLog", This);
 
     PuertsObj
         ->Set(Context, FV8Utils::ToV8String(Isolate, "toCString"),
@@ -408,7 +404,7 @@ FJsEnvImpl::~FJsEnvImpl()
 #ifdef SINGLE_THREAD_VERIFY
     if(BoundThreadId != std::this_thread::get_id())
     {
-        m_pLogModule->LogError("Access by illegal thread!");
+        Logger->LogError("Access by illegal thread!");
         return;
     }
 #endif
@@ -534,65 +530,6 @@ FJsEnvImpl::~FJsEnvImpl()
 #endif
 }
 
-void FJsEnvImpl::InitExtensionMethodsMap()
-{
-#ifdef SINGLE_THREAD_VERIFY
-    if(BoundThreadId != std::this_thread::get_id())
-    {
-        m_pLogModule->LogError("Access by illegal thread!");
-        return;
-    }
-#endif
-#ifdef THREAD_SAFE
-    v8::Locker Locker(MainIsolate);
-#endif
-#if !defined(ENGINE_INDEPENDENT_JSENV)
-    for (TObjectIterator<UClass> It; It; ++It)
-    {
-        UClass* Class = *It;
-        if (Class->IsChildOf<UExtensionMethods>() && Class->IsNative())
-        {
-            for (TFieldIterator<UFunction> FuncIt(Class, EFieldIteratorFlags::ExcludeSuper); FuncIt; ++FuncIt)
-            {
-                UFunction* Function = *FuncIt;
-
-                if (Function->HasAnyFunctionFlags(FUNC_Static))
-                {
-                    TFieldIterator<PropertyMacro> ParamIt(Function);
-                    if (ParamIt &&
-                        ((ParamIt->PropertyFlags & (CPF_Parm | CPF_ReturnParm)) == CPF_Parm))    // has at least one param
-                    {
-                        UStruct* Struct = nullptr;
-                        if (auto ObjectPropertyBase = CastFieldMacro<ObjectPropertyBaseMacro>(*ParamIt))
-                        {
-                            Struct = ObjectPropertyBase->PropertyClass;
-                        }
-                        else if (auto StructProperty = CastFieldMacro<StructPropertyMacro>(*ParamIt))
-                        {
-                            Struct = StructProperty->Struct;
-                        }
-                        if (Struct)
-                        {
-                            if (ExtensionMethodsMap.find(Struct) == ExtensionMethodsMap.end())
-                            {
-                                ExtensionMethodsMap[Struct] = std::vector<UFunction*>();
-                            }
-                            auto Iter = ExtensionMethodsMap.find(Struct);
-
-                            if (std::find(Iter->second.begin(), Iter->second.end(), Function) == Iter->second.end())
-                            {
-                                Iter->second.push_back(Function);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-#endif
-    ExtensionMethodsMapInited = true;
-}
-
 
 bool FJsEnvImpl::IdleNotificationDeadline(double DeadlineInSeconds)
 {
@@ -609,7 +546,7 @@ void FJsEnvImpl::LowMemoryNotification()
 #ifdef SINGLE_THREAD_VERIFY
     if(BoundThreadId != std::this_thread::get_id())
     {
-        m_pLogModule->LogError("Access by illegal thread!");
+        Logger->LogError("Access by illegal thread!");
         return;
     }
 #endif
@@ -639,12 +576,12 @@ void FJsEnvImpl::RequestFullGarbageCollectionForTesting()
 }
 
 
-void FJsEnvImpl::JsHotReload(FName ModuleName, const FString& JsSource)
+void FJsEnvImpl::JsHotReload(std::string ModuleName, const std::string& JsSource)
 {
 #ifdef SINGLE_THREAD_VERIFY
     if(BoundThreadId != std::this_thread::get_id())
     {
-        m_pLogModule->LogError("Access by illegal thread!");
+        Logger->LogError("Access by illegal thread!");
         return;
     }
 #endif
@@ -655,12 +592,12 @@ void FJsEnvImpl::JsHotReload(FName ModuleName, const FString& JsSource)
     v8::Context::Scope ContextScope(Context);
     auto LocalReloadJs = ReloadJs.Get(Isolate);
 
-    FString OutPath, OutDebugPath;
+    std::string OutPath, OutDebugPath;
 
-    if (ModuleLoader->Search(TEXT(""), ModuleName.ToString(), OutPath, OutDebugPath))
+    if (ModuleLoader->Search(,TEXT(""), ModuleName.ToString(), OutPath, OutDebugPath))
     {
         OutPath = FPaths::ConvertRelativePathToFull(OutPath);
-        Logger->Info(FString::Printf(TEXT("reload js module [%s]"), *OutPath));
+        Logger->LogInfo("reload js module ["+OutPath+"]");
         v8::TryCatch TryCatch(Isolate);
         v8::Handle<v8::Value> Args[] = {FV8Utils::ToV8String(Isolate, ModuleName), FV8Utils::ToV8String(Isolate, OutPath),
             FV8Utils::ToV8String(Isolate, JsSource)};
@@ -669,22 +606,22 @@ void FJsEnvImpl::JsHotReload(FName ModuleName, const FString& JsSource)
 
         if (TryCatch.HasCaught())
         {
-            Logger->Error(FString::Printf(TEXT("reload module exception %s"), *FV8Utils::TryCatchToString(Isolate, &TryCatch)));
+            Logger->InfoError("reload module exception "+FV8Utils::TryCatchToString(Isolate, &TryCatch));
         }
     }
     else
     {
-        Logger->Warn(FString::Printf(TEXT("not find js module [%s]"), *ModuleName.ToString()));
+        Logger->InfoWarn("not find js module ["+ModuleName.ToString()+"]");
         return;
     }
 }
 
-void FJsEnvImpl::ReloadModule(FName ModuleName, const FString& JsSource)
+void FJsEnvImpl::ReloadModule(std::string ModuleName, const std::string& JsSource)
 {
 #ifdef SINGLE_THREAD_VERIFY
     if(BoundThreadId != std::this_thread::get_id())
     {
-        m_pLogModule->LogError("Access by illegal thread!");
+        Logger->LogError("Access by illegal thread!");
         return;
     }
 #endif
@@ -700,7 +637,7 @@ void FJsEnvImpl::ReloadSource(const std::string& Path, const std::string& JsSour
 #ifdef SINGLE_THREAD_VERIFY
     if(BoundThreadId != std::this_thread::get_id())
     {
-        m_pLogModule->LogInfo("Access by illegal thread!");
+        Logger->LogInfo("Access by illegal thread!");
         return;
     }
 #endif
@@ -713,7 +650,7 @@ void FJsEnvImpl::ReloadSource(const std::string& Path, const std::string& JsSour
 
     std::ostringstream stream;
 	stream << "reload js [" << *Path <<"]";
-	m_pLogModule->LogInfo(stream);
+	Logger->LogInfo(stream);
     v8::TryCatch TryCatch(Isolate);
     v8::Handle<v8::Value> Args[] = {v8::Undefined(Isolate), FV8Utils::ToV8String(Isolate, Path), FV8Utils::ToV8String(Isolate, JsSource.c_str())};
 
@@ -723,7 +660,7 @@ void FJsEnvImpl::ReloadSource(const std::string& Path, const std::string& JsSour
     {
         std::ostringstream streama;
 		streama << "reload module exception " << FV8Utils::TryCatchToString(Isolate, &TryCatch));
-		m_pLogModule->LogError(streama);
+		Logger->LogError(streama);
     }
 }
 
@@ -815,7 +752,7 @@ void FJsEnvImpl::InvokeDelegateCallback(UDynamicDelegateProxy* Proxy, void* Para
 #ifdef SINGLE_THREAD_VERIFY
     if(BoundThreadId != std::this_thread::get_id())
     {
-        m_pLogModule->LogError("Access by illegal thread!");
+        Logger->LogError("Access by illegal thread!");
         return;
     }
 #endif
@@ -825,7 +762,7 @@ void FJsEnvImpl::InvokeDelegateCallback(UDynamicDelegateProxy* Proxy, void* Para
     {
         if (!SignatureFunction.IsValid())
         {
-		    m_pLogModule->LogWarn("invalid SignatureFunction!");
+		    Logger->LogWarn("invalid SignatureFunction!");
             return;
         }
         JsCallbackPrototypeMap[SignatureFunction.Get()] = std::make_unique<FFunctionTranslator>(SignatureFunction.Get(), true);
@@ -836,7 +773,7 @@ void FJsEnvImpl::InvokeDelegateCallback(UDynamicDelegateProxy* Proxy, void* Para
         if (!SignatureFunction.IsValid())
         {
             JsCallbackPrototypeMap.erase(Iter);
-            m_pLogModule->LogWarn("invalid SignatureFunction!");
+            Logger->LogWarn("invalid SignatureFunction!");
             return;
         }
 
@@ -1169,7 +1106,7 @@ bool FJsEnvImpl::CheckDelegateProxies(float Tick)
 #ifdef SINGLE_THREAD_VERIFY
     if(BoundThreadId != std::this_thread::get_id())
     {
-        m_pLogModule->LogError("Access by illegal thread!");
+        Logger->LogError("Access by illegal thread!");
         return;
     }
 #endif
@@ -1335,7 +1272,7 @@ void FJsEnvImpl::Start(const std::string& ModuleNameOrScript, const std::vector<
 #ifdef SINGLE_THREAD_VERIFY
     if(BoundThreadId != std::this_thread::get_id())
     {
-        m_pLogModule->LogError("Access by illegal thread!");
+        Logger->LogError("Access by illegal thread!");
         return;
     }
 #endif
@@ -1431,7 +1368,7 @@ bool FJsEnvImpl::LoadFile(const std::string& RequiringDir, const std::string& Mo
             std::ostringstream stream;
 	        stream <<"can not load ["<< *ModuleName <<"]";
 		    ErrInfo = stream.str();
-	        //m_pLogModule->LogInfo(stream.str());
+	        //Logger->LogInfo(stream.str());
             return false;
         }
     }
@@ -1455,7 +1392,7 @@ void FJsEnvImpl::ExecuteModule(const std::string& ModuleName, std::function<std:
     std::string ErrInfo;
     if (!LoadFile(TEXT(""), ModuleName, OutPath, DebugPath, Data, ErrInfo))
     {
-        m_pLogModule->LogError(ErrInfo);
+        Logger->LogError(ErrInfo);
         return;
     }
 
@@ -1488,13 +1425,13 @@ void FJsEnvImpl::ExecuteModule(const std::string& ModuleName, std::function<std:
     auto CompiledScript = v8::Script::Compile(Context, Source, &Origin);
     if (CompiledScript.IsEmpty())
     {
-        m_pLogModule->LogError(FV8Utils::TryCatchToString(Isolate, &TryCatch));
+        Logger->LogError(FV8Utils::TryCatchToString(Isolate, &TryCatch));
         return;
     }
     auto ReturnVal = CompiledScript.ToLocalChecked()->Run(Context);
     if (TryCatch.HasCaught())
     {
-        m_pLogModule->LogError(FV8Utils::TryCatchToString(Isolate, &TryCatch));
+        Logger->LogError(FV8Utils::TryCatchToString(Isolate, &TryCatch));
         return;
     }
 }
@@ -1551,16 +1488,16 @@ void FJsEnvImpl::Log(const v8::FunctionCallbackInfo<v8::Value>& Info)
     switch (Level)
     {
         case 1:
-            m_pLogModule->LogInfo(Msg);
+            Logger->LogInfo(Msg);
             break;
         case 2:
-            m_pLogModule->LogWarn(Msg);
+            Logger->LogWarn(Msg);
             break;
         case 3:
-            m_pLogModule->LogError(Msg);
+            Logger->LogError(Msg);
             break;
         default:
-            m_pLogModule->LogInfo(Msg);
+            Logger->LogInfo(Msg);
             break;
     }
 }
