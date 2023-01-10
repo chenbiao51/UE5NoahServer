@@ -7,7 +7,7 @@ namespace puerts
 class IJSModuleLoader
 {
 public:
-    virtual bool Search(const std::string& nfdatacfgPath,const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath) = 0;
+    virtual bool Search(const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath) = 0;
 
     virtual bool Load(const std::string& Path, std::string& Content) = 0;
 
@@ -21,11 +21,12 @@ public:
 class  DefaultJSModuleLoader : public IJSModuleLoader
 {
 public:
-    explicit DefaultJSModuleLoader(const std::string& InScriptRoot) : ScriptRoot(InScriptRoot)
+    explicit DefaultJSModuleLoader(const std::string& InNFDataCfgPath,const std::string& InScriptRoot) :ScriptRoot(InScriptRoot)
     {
+        NFDataCfgPath=InNFDataCfgPath;
     }
 
-    virtual bool Search(const std::string& nfdatacfgPath,const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath) override;
+    virtual bool Search(const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath) override;
 
     virtual bool Load(const std::string& Path, std::string& Content) override;
 
@@ -37,6 +38,8 @@ public:
 
     virtual bool SearchModuleWithExtInDir(const std::string& Dir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath);
 
+
+    std::string NFDataCfgPath;
     std::string ScriptRoot;
 };
 

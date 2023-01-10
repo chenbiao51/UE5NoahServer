@@ -41,7 +41,7 @@ namespace puerts
 {
 
 
-FJsEnvImpl::FJsEnvImpl(const std::string& ScriptRoot): FJsEnvImpl( std::make_shared<DefaultJSModuleLoader>(ScriptRoot), std::make_shared<NFLogModule>(), -1, nullptr, nullptr, nullptr)
+FJsEnvImpl::FJsEnvImpl(const std::string& NFDataCfgPath,const std::string& ScriptRoot): FJsEnvImpl( std::make_shared<DefaultJSModuleLoader>(NFDataCfgPath,ScriptRoot), std::make_shared<NFLogModule>(), -1, nullptr, nullptr, nullptr)
 {
 }
 

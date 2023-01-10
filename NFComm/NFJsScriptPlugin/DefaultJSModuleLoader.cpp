@@ -160,7 +160,7 @@ bool DefaultJSModuleLoader::SearchModuleWithExtInDir(const std::string& Dir, con
     return CheckExists(Dir+RequiredModule, Path, AbsolutePath) || (!EndsWith(Dir,"node_modules",false) && CheckExists(Dir+"/node_modules/"+RequiredModule, Path, AbsolutePath));
 }
 
-bool DefaultJSModuleLoader::Search(const std::string& nfdatacfgPath,const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath)
+bool DefaultJSModuleLoader::Search(const std::string& RequiredDir, const std::string& RequiredModule, std::string& Path, std::string& AbsolutePath)
 {
     if (SearchModuleInDir(RequiredDir, RequiredModule, Path, AbsolutePath))
     {
@@ -185,8 +185,8 @@ bool DefaultJSModuleLoader::Search(const std::string& nfdatacfgPath,const std::s
         }
     }
 
-    return SearchModuleInDir(nfdatacfgPath +"/"+ScriptRoot, RequiredModule, Path, AbsolutePath) ||
-           (ScriptRoot !="JavaScript" && SearchModuleInDir(nfdatacfgPath +"/JavaScript", RequiredModule, Path, AbsolutePath));
+    return SearchModuleInDir(NFDataCfgPath +"/"+ScriptRoot, RequiredModule, Path, AbsolutePath) ||
+           (ScriptRoot !="JavaScript" && SearchModuleInDir(NFDataCfgPath +"/JavaScript", RequiredModule, Path, AbsolutePath));
 }
 
 bool DefaultJSModuleLoader::Load(const std::string& Path, std::string& Content)

@@ -70,7 +70,7 @@ public:
 class FJsEnvImpl : public IJsEnv, IObjectMapper
 {
 public:
-    explicit FJsEnvImpl(const std::string& ScriptRoot);
+    explicit FJsEnvImpl(const std::string& NFDataCfgPath ,const std::string& ScriptRoot);
 
     FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::shared_ptr<NFILogModule> InLogger, int InPort,  std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime = nullptr, void* InExternalContext = nullptr);
 
