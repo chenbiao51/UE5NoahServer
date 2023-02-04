@@ -225,8 +225,6 @@ void FJsEnvImpl::StopPolling()
 
 FJsEnvImpl::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::shared_ptr<NFILogModule> InLogger, int InDebugPort,std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime, void* InExternalContext)
 {
-    GUObjectArray.AddUObjectDeleteListener(static_cast<FUObjectArray::FUObjectDeleteListener*>(this));
-
     Started = false;
     Inspector = nullptr;
     InspectorChannel = nullptr;
@@ -258,8 +256,10 @@ FJsEnvImpl::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::sha
     auto Isolate = MainIsolate;
 #ifdef THREAD_SAFE
     v8::Locker Locker(Isolate);
+
     UserObjectRetainer.Isolate = Isolate;
     SysObjectRetainer.Isolate = Isolate;
+#endif
 
     Isolate->SetData(0, static_cast<IObjectMapper*>(this));    //直接传this会有问题，强转后地址会变
 
@@ -274,14 +274,13 @@ FJsEnvImpl::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::sha
 
     v8::Isolate::Scope Isolatescope(Isolate);
 
-    NodeIsolateData =
-        node::CreateIsolateData(Isolate, &NodeUVLoop, Platform, NodeArrayBufferAllocator.get());    // node::FreeIsolateData
+    NodeIsolateData = node::CreateIsolateData(Isolate, &NodeUVLoop, Platform, NodeArrayBufferAllocator.get());    // node::FreeIsolateData
 
     v8::HandleScope HandleScope(Isolate);
 
     v8::Local<v8::Context> Context = node::NewContext(Isolate);
 
-#endif
+
 
     DefaultContext.Reset(Isolate, Context);
 
@@ -343,13 +342,11 @@ FJsEnvImpl::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::sha
 
     MethodBindingHelper<&FJsEnvImpl::ClearInterval>::Bind(Isolate, Context, Global, "clearInterval", This);
 
-    PuertsObj
-        ->Set(Context, FV8Utils::ToV8String(Isolate, "toCString"),
+    PuertsObj->Set(Context, FV8Utils::ToV8String(Isolate, "toCString"),
             v8::FunctionTemplate::New(Isolate, ToCString)->GetFunction(Context).ToLocalChecked())
         .Check();
 
-    PuertsObj
-        ->Set(Context, FV8Utils::ToV8String(Isolate, "toCPtrArray"),
+    PuertsObj->Set(Context, FV8Utils::ToV8String(Isolate, "toCPtrArray"),
             v8::FunctionTemplate::New(Isolate, ToCPtrArray)->GetFunction(Context).ToLocalChecked())
         .Check();
 
@@ -359,16 +356,10 @@ FJsEnvImpl::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::sha
 
     DelegateTemplate = v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FDelegateWrapper::ToFunctionTemplate(Isolate));
 
-    MulticastDelegateTemplate =
-        v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FMulticastDelegateWrapper::ToFunctionTemplate(Isolate));
+    MulticastDelegateTemplate =v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FMulticastDelegateWrapper::ToFunctionTemplate(Isolate));
 
     SoftObjectPtrTemplate = v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FSoftObjectWrapper::ToFunctionTemplate(Isolate));
 
-    DynamicInvoker = MakeShared<DynamicInvokerImpl, ESPMode::ThreadSafe>(this);
-    MixinInvoker = DynamicInvoker;
-#if !defined(ENGINE_INDEPENDENT_JSENV)
-    TsDynamicInvoker = MakeShared<TsDynamicInvokerImpl, ESPMode::ThreadSafe>(this);
-#endif
 
     Inspector = CreateV8Inspector(InDebugPort, &Context);
 
@@ -518,8 +509,6 @@ FJsEnvImpl::~FJsEnvImpl()
     MainIsolate->Dispose();
     MainIsolate = nullptr;
     delete CreateParams.array_buffer_allocator;
-
-    GUObjectArray.RemoveUObjectDeleteListener(static_cast<FUObjectArray::FUObjectDeleteListener*>(this));
 
     // quickjs will call UnBind in vm dispose, so cleanup move to here
 #if !WITH_BACKING_STORE_AUTO_FREE && !defined(HAS_ARRAYBUFFER_NEW_WITHOUT_STL)

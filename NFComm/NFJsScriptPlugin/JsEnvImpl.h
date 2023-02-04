@@ -203,11 +203,7 @@ private:
     void FindModule(const v8::FunctionCallbackInfo<v8::Value>& Info);
 
 public:
-#if !defined(ENGINE_INDEPENDENT_JSENV)
-    TSharedPtr<ITsDynamicInvoker, ESPMode::ThreadSafe> TsDynamicInvoker;
 
-    TSharedPtr<IDynamicInvoker, ESPMode::ThreadSafe> MixinInvoker;
-#endif
 private:
     puerts::FObjectRetainer UserObjectRetainer;
 
@@ -241,9 +237,7 @@ private:
 
     FGraphEventRef LastJob;
 
-#if PLATFORM_LINUX
     int Epoll;
-#endif
 
     void StartPolling();
 
