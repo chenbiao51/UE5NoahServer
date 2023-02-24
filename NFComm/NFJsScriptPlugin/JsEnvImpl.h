@@ -216,41 +216,12 @@ private:
     bool Started;
 
 private:
-    v8::Isolate::CreateParams CreateParams;
-
 
     uv_loop_t NodeUVLoop;
-
-    std::unique_ptr<node::ArrayBufferAllocator> NodeArrayBufferAllocator;
 
     node::IsolateData* NodeIsolateData;
 
     node::Environment* NodeEnv;
-
-    uv_thread_t PollingThread;
-
-    uv_sem_t PollingSem;
-
-    uv_async_t DummyUVHandle;
-
-    bool PollingClosed = false;
-
-    FGraphEventRef LastJob;
-
-    int Epoll;
-
-    void StartPolling();
-
-    void UvRunOnce();
-
-    void PollEvents();
-
-    static void OnWatcherQueueChanged(uv_loop_t* loop);
-
-    void WakeupPollingThread();
-
-    void StopPolling();
-
 
     v8::Isolate* MainIsolate;
 
@@ -348,9 +319,6 @@ private:
 
     std::vector<TWeakObjectPtr<UDynamicDelegateProxy>> ManualReleaseCallbackList;
 
-#ifdef SINGLE_THREAD_VERIFY
-    std::thread::id BoundThreadId;
-#endif
 
     typedef void (FJsEnvImpl::*V8MethodCallback)(const v8::FunctionCallbackInfo<v8::Value>& Info);
 
