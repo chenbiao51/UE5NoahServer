@@ -672,7 +672,7 @@ namespace puerts
         }
     }
 
-    static FName NAME_Fire("Fire");
+    static string NAME_Fire("Fire");
 
     bool FJsEnvImpl::AddToDelegate( v8::Isolate* Isolate, v8::Local<v8::Context>& Context, void* DelegatePtr, v8::Local<v8::Function> JsFunction)
     {
