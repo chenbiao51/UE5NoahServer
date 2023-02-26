@@ -69,8 +69,7 @@ public:
 	NFList<OBJECT_SCHEDULE_FUNCTOR_PTR> mxObjectFunctor;
 };
 
-class NFIScheduleModule
-	:public  NFIModule
+class NFIScheduleModule :public  NFIModule
 {
 public:
 	virtual ~NFIScheduleModule() {}

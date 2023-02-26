@@ -94,7 +94,8 @@ bool NFScheduleModule::Execute()
 				auto scheduleElement = objectMap->GetElement(it->scheduleName);
 				if (scheduleElement)
 				{
-					if(scheduleElement->mnRemainCount == 1){
+					if(scheduleElement->mnRemainCount == 1)
+					{
 						objectMap->RemoveElement(it->scheduleName);
 					}
 					scheduleElement->DoHeartBeatEvent(nowTime);
