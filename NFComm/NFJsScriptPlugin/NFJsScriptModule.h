@@ -328,7 +328,7 @@ public:
 
     V8_INLINE static NFJsScriptModule* Get(v8::Isolate* Isolate)
     {
-        return static_cast<NFJsScriptModule*>(FV8Utils::IsolateData<IObjectMapper>(Isolate));
+        return static_cast<NFJsScriptModule*>(FV8Utils::IsolateData<ICppObjectMapper>(Isolate));
     }
 
 public:
@@ -348,8 +348,6 @@ private:
 
     void LoadCppType(const v8::FunctionCallbackInfo<v8::Value>& Info);
 
-    v8::Local<v8::FunctionTemplate> GetTemplateOfClass(UStruct* Class, bool& Existed);
-
     void SetTimeout(const v8::FunctionCallbackInfo<v8::Value>& Info);
 
     void SetFTickerDelegate(const v8::FunctionCallbackInfo<v8::Value>& Info, bool Continue);
@@ -364,12 +362,14 @@ private:
 
     void FindModule(const v8::FunctionCallbackInfo<v8::Value>& Info);
 
+    void DumpStatisticsLog(const v8::FunctionCallbackInfo<v8::Value>& Info);
+
+    void SetInspectorCallback(const v8::FunctionCallbackInfo<v8::Value>& Info);
+
+    void DispatchProtocolMessage(const v8::FunctionCallbackInfo<v8::Value>& Info);
 public:
 
 private:
-    puerts::FObjectRetainer UserObjectRetainer;
-
-    puerts::FObjectRetainer SysObjectRetainer;
 
     std::shared_ptr<IJSModuleLoader> ModuleLoader;
 

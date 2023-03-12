@@ -1424,22 +1424,15 @@ exit_code = node::SpinEventLoop(NodeEnv).FromMaybe(1);
     auto Isolate = MainIsolate;
 #ifdef THREAD_SAFE
     v8::Locker Locker(Isolate);
-
-    UserObjectRetainer.Isolate = Isolate;
-    SysObjectRetainer.Isolate = Isolate;
 #endif
 
-    Isolate->SetData(0, static_cast<IObjectMapper*>(this));    //直接传this会有问题，强转后地址会变
+    Isolate->SetData(0, static_cast<ICppObjectMapper*>(this));    //直接传this会有问题，强转后地址会变
 
 
     v8::Local<v8::Context> Context = setup->context();
     DefaultContext.Reset(Isolate, Context);
 
     v8::Context::Scope context_scope(Context);
-
-
-
-
     // the same as raw v8
     Isolate->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
 
@@ -1512,10 +1505,6 @@ exit_code = node::SpinEventLoop(NodeEnv).FromMaybe(1);
     Require.Reset(Isolate, PuertsObj->Get(Context, FV8Utils::ToV8String(Isolate, "__require")).ToLocalChecked().As<v8::Function>());
 
     ReloadJs.Reset(Isolate, PuertsObj->Get(Context, FV8Utils::ToV8String(Isolate, "__reload")).ToLocalChecked().As<v8::Function>());
-
-    UserObjectRetainer.SetName(TEXT("Puerts_UserObjectRetainer"));
-    SysObjectRetainer.SetName(TEXT("Puerts_SysObjectRetainer"));
-
 }
 
 // #lizard forgives
@@ -1586,14 +1575,11 @@ bool NFJsScriptModule::IdleNotificationDeadline(double DeadlineInSeconds)
 #ifdef THREAD_SAFE
     v8::Locker Locker(MainIsolate);
 #endif
-
     return MainIsolate->IdleNotificationDeadline(DeadlineInSeconds);
-
 }
 
 void NFJsScriptModule::LowMemoryNotification()
 {
-
 #ifdef THREAD_SAFE
     v8::Locker Locker(MainIsolate);
 #endif
@@ -2025,7 +2011,7 @@ void NFJsScriptModule::SetFTickerDelegate(const v8::FunctionCallbackInfo<v8::Val
     std::function<void(const JSError*, std::shared_ptr<ILogger>&)> ExceptionLog =
         [](const JSError* Exception, std::shared_ptr<ILogger>& InLogger)
     {
-        FString Message = FString::Printf(TEXT("JS Execution Exception: %s"), *(Exception->Message));
+        FString Message = FString::Printf("JS Execution Exception: %s", *(Exception->Message));
         InLogger->Warn(Message);
     };
     std::function<void(const JSError*)> ExceptionLogWrapper = std::bind(ExceptionLog, _1, Logger);
@@ -2092,7 +2078,7 @@ void NFJsScriptModule::ClearInterval(const v8::FunctionCallbackInfo<v8::Value>& 
     // todo - mocha 7.0.1，当reporter为JSON，调用clearTimeout时，可能不传值，或传Null、Undefined过来。暂将其忽略
     if (Info.Length() == 0)
     {
-        Logger->Warn(TEXT("Calling ClearInterval with 0 argument."));
+        Logger->Warn("Calling ClearInterval with 0 argument.");
     }
     else if (Info[0]->IsNullOrUndefined())
     {
@@ -2139,4 +2125,101 @@ void NFJsScriptModule::FindModule(const v8::FunctionCallbackInfo<v8::Value>& Inf
         Func(Context, Exports);
         Info.GetReturnValue().Set(Exports);
     }
+}
+
+void NFJsScriptModule::SetInspectorCallback(const v8::FunctionCallbackInfo<v8::Value>& Info)
+{
+    v8::Isolate* Isolate = Info.GetIsolate();
+    v8::Isolate::Scope Isolatescope(Isolate);
+    v8::HandleScope HandleScope(Isolate);
+    v8::Local<v8::Context> Context = Isolate->GetCurrentContext();
+    v8::Context::Scope ContextScope(Context);
+
+    if (!Inspector)
+        return;
+
+    CHECK_V8_ARGS(EArgFunction);
+
+    if (!InspectorChannel)
+    {
+        InspectorChannel = Inspector->CreateV8InspectorChannel();
+        InspectorChannel->OnMessage(
+            [this](std::string Message)
+            {
+                // UE_LOG(LogTemp, Warning, TEXT("<-- %s"), UTF8_TO_TCHAR(Message.c_str()));
+                v8::Isolate::Scope IsolatescopeObject(MainIsolate);
+                v8::HandleScope HandleScopeObject(MainIsolate);
+                v8::Local<v8::Context> ContextInner = DefaultContext.Get(MainIsolate);
+                v8::Context::Scope ContextScopeObject(ContextInner);
+
+                auto Handler = InspectorMessageHandler.Get(MainIsolate);
+
+                v8::Local<v8::Value> Args[] = {FV8Utils::ToV8String(MainIsolate, Message.c_str())};
+
+                v8::TryCatch TryCatch(MainIsolate);
+                __USE(Handler->Call(ContextInner, ContextInner->Global(), 1, Args));
+                if (TryCatch.HasCaught())
+                {
+                    Logger->Error(FString::Printf(
+                        TEXT("inspector callback exception %s"), *FV8Utils::TryCatchToString(MainIsolate, &TryCatch)));
+                }
+            });
+    }
+
+    InspectorMessageHandler.Reset(Isolate, v8::Local<v8::Function>::Cast(Info[0]));
+}
+
+void NFJsScriptModule::DispatchProtocolMessage(const v8::FunctionCallbackInfo<v8::Value>& Info)
+{
+    v8::Isolate* Isolate = Info.GetIsolate();
+    v8::Isolate::Scope Isolatescope(Isolate);
+    v8::HandleScope HandleScope(Isolate);
+    v8::Local<v8::Context> Context = Isolate->GetCurrentContext();
+    v8::Context::Scope ContextScope(Context);
+
+    CHECK_V8_ARGS(EArgString);
+
+    if (InspectorChannel)
+    {
+        std::string Message = FV8Utils::ToFString(Isolate, Info[0]);
+        // UE_LOG(LogTemp, Warning, TEXT("--> %s"), *Message);
+        InspectorChannel->DispatchProtocolMessage(*Message);
+    }
+}
+
+void NFJsScriptModule::DumpStatisticsLog(const v8::FunctionCallbackInfo<v8::Value>& Info)
+{
+
+    v8::HeapStatistics Statistics;
+
+    v8::Isolate* Isolate = Info.GetIsolate();
+    v8::Isolate::Scope IsolateScope(Isolate);
+    v8::HandleScope HandleScope(Isolate);
+    v8::Local<v8::Context> Context = Isolate->GetCurrentContext();
+    v8::Context::Scope ContextScope(Context);
+
+    Isolate->GetHeapStatistics(&Statistics);
+
+    std::string StatisticsLog = FString::Printf(TEXT("------------------------\n"
+                                                 "Dump Statistics of V8:\n"
+                                                 "total_heap_size: %u\n"
+                                                 "total_heap_size_executable: %u\n"
+                                                 "total_physical_size: %u\n"
+                                                 "total_available_size: %u\n"
+                                                 "used_heap_size: %u\n"
+                                                 "heap_size_limit: %u\n"
+                                                 "malloced_memory: %u\n"
+                                                 "external_memory: %u\n"
+                                                 "peak_malloced_memory: %u\n"
+                                                 "number_of_native_contexts: %u\n"
+                                                 "number_of_detached_contexts: %u\n"
+                                                 "does_zap_garbage: %u\n"
+                                                 "------------------------\n"),
+        Statistics.total_heap_size(), Statistics.total_heap_size_executable(), Statistics.total_physical_size(),
+        Statistics.total_available_size(), Statistics.used_heap_size(), Statistics.heap_size_limit(), Statistics.malloced_memory(),
+        Statistics.external_memory(), Statistics.peak_malloced_memory(), Statistics.number_of_native_contexts(),
+        Statistics.number_of_detached_contexts(), Statistics.does_zap_garbage());
+
+    Logger->Info(StatisticsLog);
+
 }
