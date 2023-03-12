@@ -1417,106 +1417,106 @@ NFJsScriptModule::NFJsScriptModule(std::shared_ptr<IJSModuleLoader> InModuleLoad
     }
         
 
-    exit_code = node::SpinEventLoop(NodeEnv).FromMaybe(1);
+exit_code = node::SpinEventLoop(NodeEnv).FromMaybe(1);
 
 
     
-        auto Isolate = MainIsolate;
-    #ifdef THREAD_SAFE
-        v8::Locker Locker(Isolate);
+    auto Isolate = MainIsolate;
+#ifdef THREAD_SAFE
+    v8::Locker Locker(Isolate);
 
-        UserObjectRetainer.Isolate = Isolate;
-        SysObjectRetainer.Isolate = Isolate;
-    #endif
+    UserObjectRetainer.Isolate = Isolate;
+    SysObjectRetainer.Isolate = Isolate;
+#endif
 
-        Isolate->SetData(0, static_cast<IObjectMapper*>(this));    //直接传this会有问题，强转后地址会变
-
-
-        v8::Local<v8::Context> Context = setup->context();
-        DefaultContext.Reset(Isolate, Context);
-
-        v8::Context::Scope context_scope(Context);
+    Isolate->SetData(0, static_cast<IObjectMapper*>(this));    //直接传this会有问题，强转后地址会变
 
 
+    v8::Local<v8::Context> Context = setup->context();
+    DefaultContext.Reset(Isolate, Context);
+
+    v8::Context::Scope context_scope(Context);
 
 
-        // the same as raw v8
-        Isolate->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
 
 
-        v8::Local<v8::Object> Global = Context->Global();
+    // the same as raw v8
+    Isolate->SetMicrotasksPolicy(v8::MicrotasksPolicy::kAuto);
 
-        v8::Local<v8::Object> PuertsObj = v8::Object::New(Isolate);
-        Global->Set(Context, FV8Utils::InternalString(Isolate, "puerts"), PuertsObj).Check();
 
-        auto This = v8::External::New(Isolate, this);
+    v8::Local<v8::Object> Global = Context->Global();
 
-        MethodBindingHelper<&FJsEnvImpl::EvalScript>::Bind(Isolate, Context, Global, "__tgjsEvalScript", This);
+    v8::Local<v8::Object> PuertsObj = v8::Object::New(Isolate);
+    Global->Set(Context, FV8Utils::InternalString(Isolate, "puerts"), PuertsObj).Check();
 
-        MethodBindingHelper<&FJsEnvImpl::Log>::Bind(Isolate, Context, Global, "__tgjsLog", This);
+    auto This = v8::External::New(Isolate, this);
 
-        MethodBindingHelper<&FJsEnvImpl::SearchModule>::Bind(Isolate, Context, Global, "__tgjsSearchModule", This);
+    MethodBindingHelper<&FJsEnvImpl::EvalScript>::Bind(Isolate, Context, Global, "__tgjsEvalScript", This);
 
-        MethodBindingHelper<&FJsEnvImpl::LoadModule>::Bind(Isolate, Context, Global, "__tgjsLoadModule", This);
+    MethodBindingHelper<&FJsEnvImpl::Log>::Bind(Isolate, Context, Global, "__tgjsLog", This);
 
-        MethodBindingHelper<&FJsEnvImpl::LoadCppType>::Bind(Isolate, Context, Global, "__tgjsLoadCDataType", This);
+    MethodBindingHelper<&FJsEnvImpl::SearchModule>::Bind(Isolate, Context, Global, "__tgjsSearchModule", This);
 
-        MethodBindingHelper<&FJsEnvImpl::FindModule>::Bind(Isolate, Context, Global, "__tgjsFindModule", This);
+    MethodBindingHelper<&FJsEnvImpl::LoadModule>::Bind(Isolate, Context, Global, "__tgjsLoadModule", This);
 
-        MethodBindingHelper<&FJsEnvImpl::SetInspectorCallback>::Bind(Isolate, Context, Global, "__tgjsSetInspectorCallback", This);
+    MethodBindingHelper<&FJsEnvImpl::LoadCppType>::Bind(Isolate, Context, Global, "__tgjsLoadCDataType", This);
 
-        MethodBindingHelper<&FJsEnvImpl::DispatchProtocolMessage>::Bind( Isolate, Context, Global, "__tgjsDispatchProtocolMessage", This);
+    MethodBindingHelper<&FJsEnvImpl::FindModule>::Bind(Isolate, Context, Global, "__tgjsFindModule", This);
 
-        Isolate->SetPromiseRejectCallback(&PromiseRejectCallback<FJsEnvImpl>);
-        Global->Set(Context, FV8Utils::ToV8String(Isolate, "__tgjsSetPromiseRejectCallback"),v8::FunctionTemplate::New(Isolate, &SetPromiseRejectCallback<FJsEnvImpl>)->GetFunction(Context).ToLocalChecked()).Check();
+    MethodBindingHelper<&FJsEnvImpl::SetInspectorCallback>::Bind(Isolate, Context, Global, "__tgjsSetInspectorCallback", This);
 
-        MethodBindingHelper<&FJsEnvImpl::SetTimeout>::Bind(Isolate, Context, Global, "setTimeout", This);
+    MethodBindingHelper<&FJsEnvImpl::DispatchProtocolMessage>::Bind( Isolate, Context, Global, "__tgjsDispatchProtocolMessage", This);
 
-        MethodBindingHelper<&FJsEnvImpl::ClearInterval>::Bind(Isolate, Context, Global, "clearTimeout", This);
+    Isolate->SetPromiseRejectCallback(&PromiseRejectCallback<FJsEnvImpl>);
+    Global->Set(Context, FV8Utils::ToV8String(Isolate, "__tgjsSetPromiseRejectCallback"),v8::FunctionTemplate::New(Isolate, &SetPromiseRejectCallback<FJsEnvImpl>)->GetFunction(Context).ToLocalChecked()).Check();
 
-        MethodBindingHelper<&FJsEnvImpl::SetInterval>::Bind(Isolate, Context, Global, "setInterval", This);
+    MethodBindingHelper<&FJsEnvImpl::SetTimeout>::Bind(Isolate, Context, Global, "setTimeout", This);
 
-        MethodBindingHelper<&FJsEnvImpl::ClearInterval>::Bind(Isolate, Context, Global, "clearInterval", This);
+    MethodBindingHelper<&FJsEnvImpl::ClearInterval>::Bind(Isolate, Context, Global, "clearTimeout", This);
 
-        PuertsObj->Set(Context, FV8Utils::ToV8String(Isolate, "toCString"),
+    MethodBindingHelper<&FJsEnvImpl::SetInterval>::Bind(Isolate, Context, Global, "setInterval", This);
+
+    MethodBindingHelper<&FJsEnvImpl::ClearInterval>::Bind(Isolate, Context, Global, "clearInterval", This);
+
+    PuertsObj->Set(Context, FV8Utils::ToV8String(Isolate, "toCString"),
                 v8::FunctionTemplate::New(Isolate, ToCString)->GetFunction(Context).ToLocalChecked())
             .Check();
 
-        PuertsObj->Set(Context, FV8Utils::ToV8String(Isolate, "toCPtrArray"),
+    PuertsObj->Set(Context, FV8Utils::ToV8String(Isolate, "toCPtrArray"),
                 v8::FunctionTemplate::New(Isolate, ToCPtrArray)->GetFunction(Context).ToLocalChecked())
             .Check();
 
-        MethodBindingHelper<&FJsEnvImpl::ReleaseManualReleaseDelegate>::Bind(Isolate, Context, PuertsObj, "releaseManualReleaseDelegate", This);
+    MethodBindingHelper<&FJsEnvImpl::ReleaseManualReleaseDelegate>::Bind(Isolate, Context, PuertsObj, "releaseManualReleaseDelegate", This);
 
-        CppObjectMapper.Initialize(Isolate, Context);
+    CppObjectMapper.Initialize(Isolate, Context);
 
-        DelegateTemplate = v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FDelegateWrapper::ToFunctionTemplate(Isolate));
+    DelegateTemplate = v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FDelegateWrapper::ToFunctionTemplate(Isolate));
 
-        MulticastDelegateTemplate =v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FMulticastDelegateWrapper::ToFunctionTemplate(Isolate));
+    MulticastDelegateTemplate =v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FMulticastDelegateWrapper::ToFunctionTemplate(Isolate));
 
-        SoftObjectPtrTemplate = v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FSoftObjectWrapper::ToFunctionTemplate(Isolate));
+    SoftObjectPtrTemplate = v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FSoftObjectWrapper::ToFunctionTemplate(Isolate));
 
 
-        Inspector = CreateV8Inspector(InDebugPort, &Context);
+    Inspector = CreateV8Inspector(InDebugPort, &Context);
 
-        ExecuteModule("puerts/first_run.js");
-        ExecuteModule("puerts/log.js");
-        ExecuteModule("puerts/modular.js");
-        ExecuteModule("puerts/uelazyload.js");
-        ExecuteModule("puerts/events.js");
-        ExecuteModule("puerts/promises.js");
-        ExecuteModule("puerts/argv.js");
-        ExecuteModule("puerts/jit_stub.js");
-        ExecuteModule("puerts/hot_reload.js");
+    ExecuteModule("puerts/first_run.js");
+    ExecuteModule("puerts/log.js");
+    ExecuteModule("puerts/modular.js");
+    ExecuteModule("puerts/uelazyload.js");
+    ExecuteModule("puerts/events.js");
+    ExecuteModule("puerts/promises.js");
+    ExecuteModule("puerts/argv.js");
+    ExecuteModule("puerts/jit_stub.js");
+    ExecuteModule("puerts/hot_reload.js");
 
-        Require.Reset(Isolate, PuertsObj->Get(Context, FV8Utils::ToV8String(Isolate, "__require")).ToLocalChecked().As<v8::Function>());
+    Require.Reset(Isolate, PuertsObj->Get(Context, FV8Utils::ToV8String(Isolate, "__require")).ToLocalChecked().As<v8::Function>());
 
-        ReloadJs.Reset(Isolate, PuertsObj->Get(Context, FV8Utils::ToV8String(Isolate, "__reload")).ToLocalChecked().As<v8::Function>());
+    ReloadJs.Reset(Isolate, PuertsObj->Get(Context, FV8Utils::ToV8String(Isolate, "__reload")).ToLocalChecked().As<v8::Function>());
 
-        UserObjectRetainer.SetName(TEXT("Puerts_UserObjectRetainer"));
-        SysObjectRetainer.SetName(TEXT("Puerts_SysObjectRetainer"));
+    UserObjectRetainer.SetName(TEXT("Puerts_UserObjectRetainer"));
+    SysObjectRetainer.SetName(TEXT("Puerts_SysObjectRetainer"));
 
-    }
+}
 
 // #lizard forgives
 NFJsScriptModule::~NFJsScriptModule()
@@ -1534,53 +1534,50 @@ NFJsScriptModule::~NFJsScriptModule()
 #ifdef THREAD_SAFE
         v8::Locker Locker(Isolate);
 #endif
-        v8::Isolate::Scope IsolateScope(Isolate);
-        v8::HandleScope HandleScope(Isolate);
+    v8::Isolate::Scope IsolateScope(Isolate);
+    v8::HandleScope HandleScope(Isolate);
 
-        CppObjectMapper.UnInitialize(Isolate)
-
-        TsFunctionMap.Empty();
-        MixinFunctionMap.Empty();
+    CppObjectMapper.UnInitialize(Isolate)
 
 
-        for (auto& Pair : TickerDelegateHandleMap)
+    for (auto& Pair : TickerDelegateHandleMap)
+    {
+        FTicker::GetCoreTicker().RemoveTicker(*(Pair.first));
+        delete Pair.first;
+        delete Pair.second;
+    }
+    TickerDelegateHandleMap.clear();
+
+    node::EmitExit(NodeEnv);
+    node::Stop(NodeEnv);
+    node::FreeEnvironment(NodeEnv);
+    v8::Dispose();
+    v8::ShutdownPlatform();
+
+    if (InspectorChannel)
+    {
+        delete InspectorChannel;
+            InspectorChannel = nullptr;
+        }
+
+        if (Inspector)
         {
-            FTicker::GetCoreTicker().RemoveTicker(*(Pair.first));
-            delete Pair.first;
-            delete Pair.second;
-        }
-        TickerDelegateHandleMap.clear();
-
-        node::EmitExit(NodeEnv);
-            node::Stop(NodeEnv);
-            node::FreeEnvironment(NodeEnv);
-            v8::Dispose();
-            v8::ShutdownPlatform();
-
-            if (InspectorChannel)
-            {
-                delete InspectorChannel;
-                InspectorChannel = nullptr;
-            }
-
-            if (Inspector)
-            {
-                delete Inspector;
-                Inspector = nullptr;
-            }
-
-
-            SoftObjectPtrTemplate.Reset();
-            MulticastDelegateTemplate.Reset();
-            DelegateTemplate.Reset();
-            MapTemplate.Reset();
-            SetTemplate.Reset();
-            ArrayTemplate.Reset();
+            delete Inspector;
+            Inspector = nullptr;
         }
 
-        DefaultContext.Reset();
-        MainIsolate->Dispose();
-        MainIsolate = nullptr;
+
+        SoftObjectPtrTemplate.Reset();
+        MulticastDelegateTemplate.Reset();
+        DelegateTemplate.Reset();
+        MapTemplate.Reset();
+        SetTemplate.Reset();
+        ArrayTemplate.Reset();
+    }
+
+    DefaultContext.Reset();
+    MainIsolate->Dispose();
+    MainIsolate = nullptr;
 }
 
 
