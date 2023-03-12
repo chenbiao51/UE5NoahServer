@@ -79,7 +79,7 @@ public:
 
 };
 
-class NFJsScriptModule : public NFIJsScriptModule
+class NFJsScriptModule : public NFIJsScriptModule,ICppObjectMapper
 {
 public:
     NFJsScriptModule(NFIPluginManager* p)
@@ -265,11 +265,11 @@ protected:
 
 
 public:
-    explicit FJsEnvImpl(const std::string& NFDataCfgPath ,const std::string& ScriptRoot);
+    explicit NFJsScriptModule(const std::string& NFDataCfgPath ,const std::string& ScriptRoot);
 
-    FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::shared_ptr<NFILogModule> InLogger, int InPort,  std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime = nullptr, void* InExternalContext = nullptr);
+    NFJsScriptModule(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::shared_ptr<NFILogModule> InLogger, int InPort,  std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime = nullptr, void* InExternalContext = nullptr);
 
-    virtual ~FJsEnvImpl() override;
+    virtual ~NFJsScriptModule() override;
 
     virtual void Start(const std::string& ModuleNameOrScript, const std::vector<std::pair<std::string, NFIModule*>>& Arguments, bool IsScript) override;
 
@@ -321,43 +321,14 @@ public:
 
     virtual v8::Local<v8::Value> FindOrAddCppObject( v8::Isolate* Isolate, v8::Local<v8::Context>& Context, const void* TypeId, void* Ptr, bool PassByPointer) override;
 
-    virtual void BindContainer( void* Ptr, v8::Local<v8::Object> JSObject, void (*Callback)(const v8::WeakCallbackInfo<void>& data)) override;
-
-    virtual void UnBindContainer(void* Ptr) override;
-
-    virtual v8::Local<v8::Value> FindOrAddContainer(v8::Isolate* Isolate, v8::Local<v8::Context>& Context,  v8::Local<v8::Function> Constructor, PropertyMacro* Property1, PropertyMacro* Property2, void* Ptr, bool PassByPointer);
-
-    virtual v8::Local<v8::Value> FindOrAddDelegate(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, UObject* Owner, PropertyMacro* Property, void* DelegatePtr, bool PassByPointer) override;
-
-    virtual bool AddToDelegate( v8::Isolate* Isolate, v8::Local<v8::Context>& Context, void* DelegatePtr, v8::Local<v8::Function> JsFunction) override;
-
-    virtual PropertyMacro* FindDelegateProperty(void* DelegatePtr) override;
-
-    virtual FScriptDelegate NewManualReleaseDelegate(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, v8::Local<v8::Function> JsFunction, UFunction* SignatureFunction) override;
-
-    void ReleaseManualReleaseDelegate(const v8::FunctionCallbackInfo<v8::Value>& Info);
-
-    virtual bool RemoveFromDelegate(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, void* DelegatePtr, v8::Local<v8::Function> JsFunction) override;
-
-    virtual bool ClearDelegate(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, void* DelegatePtr) override;
-
-    virtual void ExecuteDelegate(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, const v8::FunctionCallbackInfo<v8::Value>& Info, void* DelegatePtr) override;
-
-
     virtual bool IsInstanceOfCppObject(const void* TypeId, v8::Local<v8::Object> JsObject) override;
 
 
-    bool CheckDelegateProxies(float Tick);
-
-    virtual v8::Local<v8::Value> CreateArray(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, FPropertyTranslator* Property, void* ArrayPtr) override;
-
-    void InvokeDelegateCallback(UDynamicDelegateProxy* Proxy, void* Params);
-
     v8::UniquePersistent<v8::Function> JsPromiseRejectCallback;
 
-    V8_INLINE static FJsEnvImpl* Get(v8::Isolate* Isolate)
+    V8_INLINE static NFJsScriptModule* Get(v8::Isolate* Isolate)
     {
-        return static_cast<FJsEnvImpl*>(FV8Utils::IsolateData<IObjectMapper>(Isolate));
+        return static_cast<NFJsScriptModule*>(FV8Utils::IsolateData<IObjectMapper>(Isolate));
     }
 
 public:
@@ -377,11 +348,7 @@ private:
 
     void LoadCppType(const v8::FunctionCallbackInfo<v8::Value>& Info);
 
-    bool GetContainerTypeProperty(v8::Local<v8::Context> Context, v8::Local<v8::Value> Value, PropertyMacro** PropertyPtr);
-
     v8::Local<v8::FunctionTemplate> GetTemplateOfClass(UStruct* Class, bool& Existed);
-
-    FPropertyTranslator* GetContainerPropertyTranslator(PropertyMacro* Property);
 
     void SetTimeout(const v8::FunctionCallbackInfo<v8::Value>& Info);
 
@@ -426,60 +393,7 @@ private:
 
     v8::Global<v8::Function> ReloadJs;
 
-    TMap<UStruct*, v8::UniquePersistent<v8::FunctionTemplate>> ClassToTemplateMap;
-
-    TMap<FString, std::shared_ptr<FStructWrapper>> TypeReflectionMap;
-
-    TMap<UObject*, v8::UniquePersistent<v8::Value>> ObjectMap;
-    TMap<const class UObjectBase*, v8::UniquePersistent<v8::Value>> GeneratedObjectMap;
-
-    TMap<void*, FObjectCacheNode> StructCache;
-
-    TMap<void*, v8::UniquePersistent<v8::Value>> ContainerCache;
-
     FCppObjectMapper CppObjectMapper;
-
-
-
-    v8::UniquePersistent<v8::FunctionTemplate> FixSizeArrayTemplate;
-
-    struct ContainerPropertyInfo
-    {
-#if ENGINE_MINOR_VERSION < 25 && ENGINE_MAJOR_VERSION < 5
-        TWeakObjectPtr<PropertyMacro> PropertyWeakPtr;
-#else
-        TWeakFieldPtr<PropertyMacro> PropertyWeakPtr;
-#endif
-        std::unique_ptr<FPropertyTranslator> PropertyTranslator;
-    };
-
-    std::map<PropertyMacro*, ContainerPropertyInfo> ContainerPropertyMap;
-
-    std::map<UFunction*, std::unique_ptr<FFunctionTranslator>> JsCallbackPrototypeMap;
-
-    std::map<UStruct*, std::unique_ptr<ObjectMerger>> ObjectMergers;
-
-    struct DelegateObjectInfo
-    {
-        v8::UniquePersistent<v8::Object> JSObject;    // function to proxy save here
-        TWeakObjectPtr<UObject> Owner;                //可用于自动清理
-        DelegatePropertyMacro* DelegateProperty;
-        MulticastDelegatePropertyMacro* MulticastDelegateProperty;
-        UFunction* SignatureFunction;
-        bool PassByPointer;
-        TWeakObjectPtr<UDynamicDelegateProxy> Proxy;           // for delegate
-        TSet<TWeakObjectPtr<UDynamicDelegateProxy>> Proxys;    // for MulticastDelegate
-    };
-
-    struct TsFunctionInfo
-    {
-        v8::UniquePersistent<v8::Function> JsFunction;
-
-        std::unique_ptr<puerts::FFunctionTranslator> FunctionTranslator;
-    };
-
-    
-    TSharedPtr<DynamicInvokerImpl, ESPMode::ThreadSafe> DynamicInvoker;
 
 
     v8::UniquePersistent<v8::FunctionTemplate> DelegateTemplate;
@@ -489,12 +403,6 @@ private:
     v8::UniquePersistent<v8::FunctionTemplate> SoftObjectPtrTemplate;
 
     std::map<void*, DelegateObjectInfo> DelegateMap;
-
-    std::map<UFunction*, TsFunctionInfo> TsFunctionMap;
-
-    TMap<UFunction*, v8::UniquePersistent<v8::Function>> MixinFunctionMap;
-
-    std::map<UStruct*, std::vector<UFunction*>> ExtensionMethodsMap;
 
     bool ExtensionMethodsMapInited = false;
 
@@ -508,12 +416,7 @@ private:
 
     v8::Global<v8::Function> InspectorMessageHandler;
 
-    FContainerMeta ContainerMeta;
-
     v8::Global<v8::Map> ManualReleaseCallbackMap;
-
-    std::vector<TWeakObjectPtr<UDynamicDelegateProxy>> ManualReleaseCallbackList;
-
 
     typedef void (FJsEnvImpl::*V8MethodCallback)(const v8::FunctionCallbackInfo<v8::Value>& Info);
 

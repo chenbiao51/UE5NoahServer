@@ -283,61 +283,8 @@ private:
 
     v8::Global<v8::Function> ReloadJs;
 
-    TMap<UStruct*, v8::UniquePersistent<v8::FunctionTemplate>> ClassToTemplateMap;
-
-    TMap<FString, std::shared_ptr<FStructWrapper>> TypeReflectionMap;
-
-    TMap<UObject*, v8::UniquePersistent<v8::Value>> ObjectMap;
-    TMap<const class UObjectBase*, v8::UniquePersistent<v8::Value>> GeneratedObjectMap;
-
-    TMap<void*, FObjectCacheNode> StructCache;
-
-    TMap<void*, v8::UniquePersistent<v8::Value>> ContainerCache;
 
     FCppObjectMapper CppObjectMapper;
-
-
-
-    v8::UniquePersistent<v8::FunctionTemplate> FixSizeArrayTemplate;
-
-    struct ContainerPropertyInfo
-    {
-#if ENGINE_MINOR_VERSION < 25 && ENGINE_MAJOR_VERSION < 5
-        TWeakObjectPtr<PropertyMacro> PropertyWeakPtr;
-#else
-        TWeakFieldPtr<PropertyMacro> PropertyWeakPtr;
-#endif
-        std::unique_ptr<FPropertyTranslator> PropertyTranslator;
-    };
-
-    std::map<PropertyMacro*, ContainerPropertyInfo> ContainerPropertyMap;
-
-    std::map<UFunction*, std::unique_ptr<FFunctionTranslator>> JsCallbackPrototypeMap;
-
-    std::map<UStruct*, std::unique_ptr<ObjectMerger>> ObjectMergers;
-
-    struct DelegateObjectInfo
-    {
-        v8::UniquePersistent<v8::Object> JSObject;    // function to proxy save here
-        TWeakObjectPtr<UObject> Owner;                //可用于自动清理
-        DelegatePropertyMacro* DelegateProperty;
-        MulticastDelegatePropertyMacro* MulticastDelegateProperty;
-        UFunction* SignatureFunction;
-        bool PassByPointer;
-        TWeakObjectPtr<UDynamicDelegateProxy> Proxy;           // for delegate
-        TSet<TWeakObjectPtr<UDynamicDelegateProxy>> Proxys;    // for MulticastDelegate
-    };
-
-    struct TsFunctionInfo
-    {
-        v8::UniquePersistent<v8::Function> JsFunction;
-
-        std::unique_ptr<puerts::FFunctionTranslator> FunctionTranslator;
-    };
-
-    
-    TSharedPtr<DynamicInvokerImpl, ESPMode::ThreadSafe> DynamicInvoker;
-
 
     v8::UniquePersistent<v8::FunctionTemplate> DelegateTemplate;
 
@@ -346,12 +293,6 @@ private:
     v8::UniquePersistent<v8::FunctionTemplate> SoftObjectPtrTemplate;
 
     std::map<void*, DelegateObjectInfo> DelegateMap;
-
-    std::map<UFunction*, TsFunctionInfo> TsFunctionMap;
-
-    TMap<UFunction*, v8::UniquePersistent<v8::Function>> MixinFunctionMap;
-
-    std::map<UStruct*, std::vector<UFunction*>> ExtensionMethodsMap;
 
     bool ExtensionMethodsMapInited = false;
 
@@ -364,12 +305,6 @@ private:
     V8InspectorChannel* InspectorChannel;
 
     v8::Global<v8::Function> InspectorMessageHandler;
-
-    FContainerMeta ContainerMeta;
-
-    v8::Global<v8::Map> ManualReleaseCallbackMap;
-
-    std::vector<TWeakObjectPtr<UDynamicDelegateProxy>> ManualReleaseCallbackList;
 
 
     typedef void (FJsEnvImpl::*V8MethodCallback)(const v8::FunctionCallbackInfo<v8::Value>& Info);

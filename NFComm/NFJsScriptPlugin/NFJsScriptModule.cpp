@@ -1300,8 +1300,8 @@ void NFJsScriptModule::OnNetMsgCallBackAsClientForGameServer(const NFSOCK sockIn
 	}
 }
 
-NFJsScriptModule::FJsEnvImpl(const std::string& NFDataCfgPath,const std::string& ScriptRoot): 
-                  FJsEnvImpl( std::make_shared<DefaultJSModuleLoader>(NFDataCfgPath,ScriptRoot), std::make_shared<NFLogModule>(), -1, nullptr, nullptr, nullptr){}
+NFJsScriptModule::NFJsScriptModule(const std::string& NFDataCfgPath,const std::string& ScriptRoot): 
+                  NFJsScriptModule( std::make_shared<DefaultJSModuleLoader>(NFDataCfgPath,ScriptRoot), std::make_shared<NFLogModule>(), -1, nullptr, nullptr, nullptr){}
 
 static void ToCString(const v8::FunctionCallbackInfo<v8::Value>& Info)
 {
@@ -1364,60 +1364,60 @@ static void ToCPtrArray(const v8::FunctionCallbackInfo<v8::Value>& Info)
         Info.GetReturnValue().Set(Ret);
     }
 
-    NFJsScriptModule::FJsEnvImpl(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::shared_ptr<NFILogModule> InLogger, int InDebugPort,std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime, void* InExternalContext)
-    {
-        Started = false;
-        Inspector = nullptr;
-        InspectorChannel = nullptr;
+NFJsScriptModule::NFJsScriptModule(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::shared_ptr<NFILogModule> InLogger, int InDebugPort,std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime, void* InExternalContext)
+{
+    Started = false;
+    Inspector = nullptr;
+    InspectorChannel = nullptr;
 
-        ModuleLoader = std::move(InModuleLoader);
-        Logger = InLogger;
-        OnSourceLoadedCallback = InOnSourceLoadedCallback;
+    ModuleLoader = std::move(InModuleLoader);
+    Logger = InLogger;
+    OnSourceLoadedCallback = InOnSourceLoadedCallback;
 
-        int Argc = 1;
-        const char* Argv[] = {"puerts"};
-        std::vector<std::string> Args(Argv, Argv + Argc);
-        std::vector<std::string> ExecArgs;
-        std::vector<std::string> Errors;
+    int Argc = 1;
+    const char* Argv[] = {"puerts"};
+    std::vector<std::string> Args(Argv, Argv + Argc);
+    std::vector<std::string> ExecArgs;
+    std::vector<std::string> Errors;
 
   
-        std::unique_ptr<MultiIsolatePlatform> platform =  MultiIsolatePlatform::Create(4);
-        V8::InitializePlatform(platform.get());
-        V8::Initialize();
+    std::unique_ptr<MultiIsolatePlatform> platform =  MultiIsolatePlatform::Create(4);
+    V8::InitializePlatform(platform.get());
+    V8::Initialize();
 
 
-       int exit_code = 0;
-        std::vector<std::string> errors;
-        std::unique_ptr<CommonEnvironmentSetup> setup = CommonEnvironmentSetup::Create(platform.get(), &errors, Args, ExecArgs);
-        if (!setup) {
-            for (const std::string& err : errors)
-            fprintf(stderr, "%s: %s\n", args[0].c_str(), err.c_str());
-            return ;
-        }
+    int exit_code = 0;
+    std::vector<std::string> errors;
+    std::unique_ptr<CommonEnvironmentSetup> setup = CommonEnvironmentSetup::Create(platform.get(), &errors, Args, ExecArgs);
+    if (!setup) {
+        for (const std::string& err : errors)
+        fprintf(stderr, "%s: %s\n", args[0].c_str(), err.c_str());
+        return ;
+    }
 
-        MainIsolate = setup->isolate();
-        NodeEnv = setup->env();
+    MainIsolate = setup->isolate();
+    NodeEnv = setup->env();
 
         
-        Locker locker(isolate);
-        v8::Isolate::Scope isolate_scope(isolate);
-        v8::HandleScope handle_scope(isolate);
-        v8::Context::Scope context_scope(setup->context());
+    Locker locker(isolate);
+    v8::Isolate::Scope isolate_scope(isolate);
+    v8::HandleScope handle_scope(isolate);
+    v8::Context::Scope context_scope(setup->context());
 
-        MaybeLocal<Value> LoadenvRet = node::LoadEnvironment(
+    MaybeLocal<Value> LoadenvRet = node::LoadEnvironment(
                 NodeEnv,
                 "const publicRequire = require('module').createRequire(process.cwd() + '/');"
                 "globalThis.require = publicRequire;"
                 "globalThis.embedVars = { nön_ascıı: '🏳️‍🌈' };"
                 "require('vm').runInThisContext(process.argv[1]);");
 
-        if (LoadenvRet.IsEmpty())  // There has been a JS exception.
-        {
-            return ;
-        }
+    if (LoadenvRet.IsEmpty())  // There has been a JS exception.
+    {
+        return ;
+    }
         
 
-        exit_code = node::SpinEventLoop(NodeEnv).FromMaybe(1);
+    exit_code = node::SpinEventLoop(NodeEnv).FromMaybe(1);
 
 
     
@@ -1513,92 +1513,45 @@ static void ToCPtrArray(const v8::FunctionCallbackInfo<v8::Value>& Info)
 
         ReloadJs.Reset(Isolate, PuertsObj->Get(Context, FV8Utils::ToV8String(Isolate, "__reload")).ToLocalChecked().As<v8::Function>());
 
-        DelegateProxiesCheckerHandler =FTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateRaw(this, &FJsEnvImpl::CheckDelegateProxies), 1);
-
-        ManualReleaseCallbackMap.Reset(Isolate, v8::Map::New(Isolate));
-
         UserObjectRetainer.SetName(TEXT("Puerts_UserObjectRetainer"));
         SysObjectRetainer.SetName(TEXT("Puerts_SysObjectRetainer"));
 
     }
 
-    // #lizard forgives
-    FJsEnvImpl::~FJsEnvImpl()
+// #lizard forgives
+NFJsScriptModule::~NFJsScriptModule()
+{
+
+    InspectorMessageHandler.Reset();
+    Require.Reset();
+    ReloadJs.Reset();
+    JsPromiseRejectCallback.Reset();
+
+    FTicker::GetCoreTicker().RemoveTicker(DelegateProxiesCheckerHandler);
+
     {
+        auto Isolate = MainIsolate;
+#ifdef THREAD_SAFE
+        v8::Locker Locker(Isolate);
+#endif
+        v8::Isolate::Scope IsolateScope(Isolate);
+        v8::HandleScope HandleScope(Isolate);
 
-        for (int i = 0; i < ManualReleaseCallbackList.size(); i++)
+        CppObjectMapper.UnInitialize(Isolate)
+
+        TsFunctionMap.Empty();
+        MixinFunctionMap.Empty();
+
+
+        for (auto& Pair : TickerDelegateHandleMap)
         {
-            if (ManualReleaseCallbackList[i].IsValid())
-            {
-                ManualReleaseCallbackList[i].Get()->JsFunction.Reset();
-            }
+            FTicker::GetCoreTicker().RemoveTicker(*(Pair.first));
+            delete Pair.first;
+            delete Pair.second;
         }
-        ManualReleaseCallbackMap.Reset();
-        InspectorMessageHandler.Reset();
-        Require.Reset();
-        ReloadJs.Reset();
-        JsPromiseRejectCallback.Reset();
+        TickerDelegateHandleMap.clear();
 
-        FTicker::GetCoreTicker().RemoveTicker(DelegateProxiesCheckerHandler);
-
-        {
-            auto Isolate = MainIsolate;
-    #ifdef THREAD_SAFE
-            v8::Locker Locker(Isolate);
-    #endif
-            v8::Isolate::Scope IsolateScope(Isolate);
-            v8::HandleScope HandleScope(Isolate);
-
-            ClassToTemplateMap.Empty();
-
-            CppObjectMapper.UnInitialize(Isolate);
-
-            ObjectMap.Empty();
-
-            GeneratedObjectMap.Empty();
-
-            StructCache.Empty();
-
-            ContainerCache.Empty();
-
-            for (auto Iter = DelegateMap.begin(); Iter != DelegateMap.end(); Iter++)
-            {
-                Iter->second.JSObject.Reset();
-                if (Iter->second.Proxy.IsValid())
-                {
-                    Iter->second.Proxy->JsFunction.Reset();
-                }
-                for (auto ProxyIter = Iter->second.Proxys.CreateIterator(); ProxyIter; ++ProxyIter)
-                {
-                    if (!(*ProxyIter).IsValid())
-                    {
-                        continue;
-                    }
-                    (*ProxyIter)->JsFunction.Reset();
-                }
-                if (!Iter->second.PassByPointer)
-                {
-                    delete ((FScriptDelegate*) Iter->first);
-                }
-            }
-
-            TsFunctionMap.Empty();
-            MixinFunctionMap.Empty();
-
-    #if !defined(ENGINE_INDEPENDENT_JSENV)
-            TsDynamicInvoker.Reset();
-            BindInfoMap.Empty();
-    #endif
-
-            for (auto& Pair : TickerDelegateHandleMap)
-            {
-                FTicker::GetCoreTicker().RemoveTicker(*(Pair.first));
-                delete Pair.first;
-                delete Pair.second;
-            }
-            TickerDelegateHandleMap.clear();
-
-            node::EmitExit(NodeEnv);
+        node::EmitExit(NodeEnv);
             node::Stop(NodeEnv);
             node::FreeEnvironment(NodeEnv);
             v8::Dispose();
@@ -1616,13 +1569,10 @@ static void ToCPtrArray(const v8::FunctionCallbackInfo<v8::Value>& Info)
                 Inspector = nullptr;
             }
 
-            DynamicInvoker.Reset();
-            MixinInvoker.Reset();
 
             SoftObjectPtrTemplate.Reset();
             MulticastDelegateTemplate.Reset();
             DelegateTemplate.Reset();
-            FixSizeArrayTemplate.Reset();
             MapTemplate.Reset();
             SetTemplate.Reset();
             ArrayTemplate.Reset();
@@ -1631,657 +1581,136 @@ static void ToCPtrArray(const v8::FunctionCallbackInfo<v8::Value>& Info)
         DefaultContext.Reset();
         MainIsolate->Dispose();
         MainIsolate = nullptr;
-
-        // quickjs will call UnBind in vm dispose, so cleanup move to here
-    #if !WITH_BACKING_STORE_AUTO_FREE && !defined(HAS_ARRAYBUFFER_NEW_WITHOUT_STL)
-        for (auto& KV : ScriptStructFinalizeInfoMap)
-        {
-            FScriptStructWrapper::Free(KV.Value.Struct, KV.Value.Finalize, KV.Key);
-        }
-    #endif
-    }
+}
 
 
-    bool NFJsScriptModule::IdleNotificationDeadline(double DeadlineInSeconds)
+bool NFJsScriptModule::IdleNotificationDeadline(double DeadlineInSeconds)
+{
+#ifdef THREAD_SAFE
+    v8::Locker Locker(MainIsolate);
+#endif
+
+    return MainIsolate->IdleNotificationDeadline(DeadlineInSeconds);
+
+}
+
+void NFJsScriptModule::LowMemoryNotification()
+{
+
+#ifdef THREAD_SAFE
+    v8::Locker Locker(MainIsolate);
+#endif
+    MainIsolate->LowMemoryNotification();
+}
+
+void NFJsScriptModule::RequestMinorGarbageCollectionForTesting()
+{
+#ifdef THREAD_SAFE
+    v8::Locker Locker(MainIsolate);
+#endif
+    MainIsolate->RequestGarbageCollectionForTesting(v8::Isolate::kMinorGarbageCollection);
+}
+
+void NFJsScriptModule::RequestFullGarbageCollectionForTesting()
+{
+#ifdef THREAD_SAFE
+    v8::Locker Locker(MainIsolate);
+#endif
+
+    MainIsolate->RequestGarbageCollectionForTesting(v8::Isolate::kFullGarbageCollection);
+
+}
+
+
+void NFJsScriptModule::JsHotReload(std::string ModuleName, const std::string& JsSource)
+{
+
+    auto Isolate = MainIsolate;
+    v8::Isolate::Scope IsolateScope(Isolate);
+    v8::HandleScope HandleScope(Isolate);
+    auto Context = DefaultContext.Get(Isolate);
+    v8::Context::Scope ContextScope(Context);
+    auto LocalReloadJs = ReloadJs.Get(Isolate);
+
+    std::string OutPath, OutDebugPath;
+
+    if (ModuleLoader->Search("", ModuleName.ToString(), OutPath, OutDebugPath))
     {
-    #ifdef THREAD_SAFE
-        v8::Locker Locker(MainIsolate);
-    #endif
-
-        return MainIsolate->IdleNotificationDeadline(DeadlineInSeconds);
-
-    }
-
-    void NFJsScriptModule::LowMemoryNotification()
-    {
-
-    #ifdef THREAD_SAFE
-        v8::Locker Locker(MainIsolate);
-    #endif
-        MainIsolate->LowMemoryNotification();
-    }
-
-    void NFJsScriptModule::RequestMinorGarbageCollectionForTesting()
-    {
-    #ifdef THREAD_SAFE
-        v8::Locker Locker(MainIsolate);
-    #endif
-        MainIsolate->RequestGarbageCollectionForTesting(v8::Isolate::kMinorGarbageCollection);
-
-    }
-
-    void NFJsScriptModule::RequestFullGarbageCollectionForTesting()
-    {
-    #ifdef THREAD_SAFE
-        v8::Locker Locker(MainIsolate);
-    #endif
-
-        MainIsolate->RequestGarbageCollectionForTesting(v8::Isolate::kFullGarbageCollection);
-
-    }
-
-
-    void NFJsScriptModule::JsHotReload(std::string ModuleName, const std::string& JsSource)
-    {
-
-        auto Isolate = MainIsolate;
-        v8::Isolate::Scope IsolateScope(Isolate);
-        v8::HandleScope HandleScope(Isolate);
-        auto Context = DefaultContext.Get(Isolate);
-        v8::Context::Scope ContextScope(Context);
-        auto LocalReloadJs = ReloadJs.Get(Isolate);
-
-        std::string OutPath, OutDebugPath;
-
-        if (ModuleLoader->Search(,TEXT(""), ModuleName.ToString(), OutPath, OutDebugPath))
-        {
-            OutPath = FPaths::ConvertRelativePathToFull(OutPath);
-            Logger->LogInfo("reload js module ["+OutPath+"]");
-            v8::TryCatch TryCatch(Isolate);
-            v8::Handle<v8::Value> Args[] = {
-                FV8Utils::ToV8String(Isolate, ModuleName), 
-                FV8Utils::ToV8String(Isolate, OutPath), 
-                FV8Utils::ToV8String(Isolate, JsSource)};
-
-            auto MaybeRet = LocalReloadJs->Call(Context, v8::Undefined(Isolate), 3, Args);
-
-            if (TryCatch.HasCaught())
-            {
-                Logger->InfoError("reload module exception "+FV8Utils::TryCatchToString(Isolate, &TryCatch));
-            }
-        }
-        else
-        {
-            Logger->InfoWarn("not find js module ["+ModuleName.ToString()+"]");
-            return;
-        }
-    }
-
-    void NFJsScriptModule::ReloadModule(std::string ModuleName, const std::string& JsSource)
-    {
-
-    #ifdef THREAD_SAFE
-        v8::Locker Locker(MainIsolate);
-    #endif
-        // Logger->Info(FString::Printf(TEXT("start reload js module [%s]"), *ModuleName.ToString()));
-        JsHotReload(ModuleName, JsSource);
-    }
-
-    void NFJsScriptModule::ReloadSource(const std::string& Path, const std::string& JsSource)
-    {
-
-        auto Isolate = MainIsolate;
-        v8::Isolate::Scope IsolateScope(Isolate);
-        v8::HandleScope HandleScope(Isolate);
-        auto Context = DefaultContext.Get(Isolate);
-        v8::Context::Scope ContextScope(Context);
-        auto LocalReloadJs = ReloadJs.Get(Isolate);
-
-        std::ostringstream stream;
-        stream << "reload js [" << *Path <<"]";
-        Logger->LogInfo(stream);
+        OutPath = FPaths::ConvertRelativePathToFull(OutPath);
+        Logger->LogInfo("reload js module ["+OutPath+"]");
         v8::TryCatch TryCatch(Isolate);
-        v8::Handle<v8::Value> Args[] = {v8::Undefined(Isolate), FV8Utils::ToV8String(Isolate, Path), FV8Utils::ToV8String(Isolate, JsSource.c_str())};
+        v8::Handle<v8::Value> Args[] = {
+            FV8Utils::ToV8String(Isolate, ModuleName), 
+            FV8Utils::ToV8String(Isolate, OutPath), 
+            FV8Utils::ToV8String(Isolate, JsSource)};
 
         auto MaybeRet = LocalReloadJs->Call(Context, v8::Undefined(Isolate), 3, Args);
 
         if (TryCatch.HasCaught())
         {
-            std::ostringstream streama;
-            streama << "reload module exception " << FV8Utils::TryCatchToString(Isolate, &TryCatch));
-            Logger->LogError(streama);
+            Logger->InfoError("reload module exception "+FV8Utils::TryCatchToString(Isolate, &TryCatch));
         }
-    }
-
-    void NFJsScriptModule::OnSourceLoaded(std::function<void(const FString&)> Callback)
-    {
-        OnSourceLoadedCallback = Callback;
-    }
-
-    std::string NFJsScriptModule::CurrentStackTrace()
-    {
-        return "";
-    }
-
-
-    v8::Local<v8::Value> NFJsScriptModule::FindOrAddCppObject(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, const void* TypeId, void* Ptr, bool PassByPointer)
-    {
-        return CppObjectMapper.FindOrAddCppObject(Isolate, Context, TypeId, Ptr, PassByPointer);
-    }
-
-    v8::Local<v8::Value> NFJsScriptModule::FindOrAddDelegate(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, UObject* Owner, PropertyMacro* Property, void* DelegatePtr, bool PassByPointer)
-    {
-        check(DelegatePtr);    // must not null
-
-        if (PassByPointer)
-        {
-            auto Iter = DelegateMap.find(DelegatePtr);
-            if (Iter != DelegateMap.end())
-            {
-                if (Iter->second.Owner.IsValid())
-                {
-                    return Iter->second.JSObject.Get(Isolate);
-                }
-                else
-                {
-                    ClearDelegate(Isolate, Context, DelegatePtr);
-                }
-            }
-        }
-        else
-        {
-            if (CastFieldMacro<DelegatePropertyMacro>(Property))
-            {
-                auto NewDelegatePtr = new FScriptDelegate;
-                *NewDelegatePtr = *static_cast<FScriptDelegate*>(DelegatePtr);
-                DelegatePtr = NewDelegatePtr;
-            }
-            else    // do not support MulticastDelegate
-            {
-                return v8::Undefined(Isolate);
-            }
-        }
-
-        {
-            // UE_LOG(LogTemp, Warning, TEXT("FindOrAddDelegate -- new %s"), *Property->GetName());
-            auto Constructor = (Property->IsA<DelegatePropertyMacro>() ? DelegateTemplate : MulticastDelegateTemplate)
-                                .Get(Isolate)
-                                ->GetFunction(Context)
-                                .ToLocalChecked();
-            auto JSObject = Constructor->NewInstance(Context).ToLocalChecked();
-            DataTransfer::SetPointer(Isolate, JSObject, DelegatePtr, 0);
-            auto ReturnVal = JSObject->Set(Context, 0, v8::Map::New(Isolate));
-            UFunction* Function = nullptr;
-            DelegatePropertyMacro* DelegateProperty = CastFieldMacro<DelegatePropertyMacro>(Property);
-            MulticastDelegatePropertyMacro* MulticastDelegateProperty = CastFieldMacro<MulticastDelegatePropertyMacro>(Property);
-            if (DelegateProperty)
-            {
-                Function = DelegateProperty->SignatureFunction;
-            }
-            else if (MulticastDelegateProperty)
-            {
-                Function = MulticastDelegateProperty->SignatureFunction;
-            }
-            DelegateMap[DelegatePtr] = {v8::UniquePersistent<v8::Object>(Isolate, JSObject), TWeakObjectPtr<UObject>(Owner),
-                DelegateProperty, MulticastDelegateProperty, Function, PassByPointer, nullptr};
-            return JSObject;
-        }
-    }
-
-    v8::Local<v8::Value> NFJsScriptModule::CreateArray(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, FPropertyTranslator* Property, void* ArrayPtr)
-    {
-        auto Array = FixSizeArrayTemplate.Get(Isolate)->GetFunction(Context).ToLocalChecked()->NewInstance(Context).ToLocalChecked();
-        DataTransfer::SetPointer(Isolate, Array, ArrayPtr, 0);
-        DataTransfer::SetPointer(Isolate, Array, Property, 1);
-        return Array;
-    }
-
-    void NFJsScriptModule::InvokeDelegateCallback(UDynamicDelegateProxy* Proxy, void* Params)
-    {
-
-        auto SignatureFunction = Proxy->SignatureFunction;
-        auto Iter = JsCallbackPrototypeMap.find(SignatureFunction.Get());
-        if (Iter == JsCallbackPrototypeMap.end())
-        {
-            if (!SignatureFunction.IsValid())
-            {
-                Logger->LogWarn("invalid SignatureFunction!");
-                return;
-            }
-            JsCallbackPrototypeMap[SignatureFunction.Get()] = std::make_unique<FFunctionTranslator>(SignatureFunction.Get(), true);
-            Iter = JsCallbackPrototypeMap.find(SignatureFunction.Get());
-        }
-        else
-        {
-            if (!SignatureFunction.IsValid())
-            {
-                JsCallbackPrototypeMap.erase(Iter);
-                Logger->LogWarn("invalid SignatureFunction!");
-                return;
-            }
-
-            // 非 Editor 模式，函数签名地址可能会变且内存可能复用，不检查可能会访问到旧的非法地址。
-            if (!Iter->second->IsValid())
-            {
-                JsCallbackPrototypeMap[SignatureFunction.Get()] = std::make_unique<FFunctionTranslator>(SignatureFunction.Get(), true);
-                Iter = JsCallbackPrototypeMap.find(SignatureFunction.Get());
-            }
-        }
-
-        auto Isolate = MainIsolate;
-        v8::Isolate::Scope IsolateScope(Isolate);
-        v8::HandleScope HandleScope(Isolate);
-        auto Context = DefaultContext.Get(Isolate);
-        v8::Context::Scope ContextScope(Context);
-
-        v8::TryCatch TryCatch(Isolate);
-
-        Iter->second->CallJs(Isolate, Context, Proxy->JsFunction.Get(Isolate), Context->Global(), Params);
-
-        if (TryCatch.HasCaught())
-        {
-            Logger->Error(FString::Printf(TEXT("js callback exception %s"), *FV8Utils::TryCatchToString(Isolate, &TryCatch)));
-        }
-    }
-
-
-
-    void NFJsScriptModule::ExecuteDelegate( v8::Isolate* Isolate, v8::Local<v8::Context>& Context, const v8::FunctionCallbackInfo<v8::Value>& Info, void* DelegatePtr)
-    {
-        auto Iter = DelegateMap.find(DelegatePtr);
-        if (Iter == DelegateMap.end())
-        {
-            FV8Utils::ThrowException(Isolate, "can not find the delegate!");
-        }
-        auto SignatureFunction = Iter->second.SignatureFunction;
-        if (JsCallbackPrototypeMap.find(SignatureFunction) == JsCallbackPrototypeMap.end())
-        {
-            JsCallbackPrototypeMap[SignatureFunction] = std::make_unique<FFunctionTranslator>(SignatureFunction, true);
-        }
-
-        if (Iter->second.DelegateProperty)
-        {
-            JsCallbackPrototypeMap[SignatureFunction]->Call(Isolate, Context, Info,
-                [ScriptDelegate = static_cast<FScriptDelegate*>(DelegatePtr)](void* Params)
-                { ScriptDelegate->ProcessDelegate<UObject>(Params); });
-        }
-        else
-        {
-            JsCallbackPrototypeMap[SignatureFunction]->Call(Isolate, Context, Info,
-                [MulticastScriptDelegate = static_cast<FMulticastScriptDelegate*>(DelegatePtr)](void* Params)
-                { MulticastScriptDelegate->ProcessMulticastDelegate<UObject>(Params); });
-        }
-    }
-
-    static string NAME_Fire("Fire");
-
-    bool NFJsScriptModule::AddToDelegate( v8::Isolate* Isolate, v8::Local<v8::Context>& Context, void* DelegatePtr, v8::Local<v8::Function> JsFunction)
-    {
-        // UE_LOG(LogTemp, Warning, TEXT("add delegate proxy"));
-        auto Iter = DelegateMap.find(DelegatePtr);
-        if (Iter == DelegateMap.end())
-        {
-            return false;
-        }
-        if (!Iter->second.Owner.IsValid())
-        {
-            Logger->Warn("try to bind a delegate with invalid owner!");
-            ClearDelegate(Isolate, Context, DelegatePtr);
-            if (!Iter->second.PassByPointer)
-            {
-                delete ((FScriptDelegate*) Iter->first);
-            }
-            DelegateMap.erase(Iter);
-            return false;
-        }
-        if (Iter->second.Proxy.IsValid())
-        {
-            ClearDelegate(Isolate, Context, DelegatePtr);
-        }
-        auto JSObject = Iter->second.JSObject.Get(Isolate);
-        auto Map = v8::Local<v8::Map>::Cast(JSObject->Get(Context, 0).ToLocalChecked());
-        auto MaybeProxy = Map->Get(Context, JsFunction);
-        UDynamicDelegateProxy* DelegateProxy = nullptr;
-        if (MaybeProxy.IsEmpty() || !MaybeProxy.ToLocalChecked()->IsExternal())
-        {
-            // UE_LOG(LogTemp, Warning, TEXT("new delegate proxy"));
-            DelegateProxy = NewObject<UDynamicDelegateProxy>();
-    #ifdef THREAD_SAFE
-            DelegateProxy->Isolate = Isolate;
-    #endif
-            DelegateProxy->Owner = Iter->second.Owner;
-            DelegateProxy->SignatureFunction = Iter->second.SignatureFunction;
-            DelegateProxy->DynamicInvoker = DynamicInvoker;
-            DelegateProxy->JsFunction = v8::UniquePersistent<v8::Function>(Isolate, JsFunction);
-
-            SysObjectRetainer.Retain(DelegateProxy);
-            auto ReturnVal = Map->Set(Context, JsFunction, v8::External::New(Context->GetIsolate(), DelegateProxy));
-        }
-        else
-        {
-            // UE_LOG(LogTemp, Warning, TEXT("find delegate proxy"));
-            DelegateProxy =
-                Cast<UDynamicDelegateProxy>(static_cast<UObject*>(v8::Local<v8::External>::Cast(MaybeProxy.ToLocalChecked())->Value()));
-        }
-
-        FScriptDelegate Delegate;
-        Delegate.BindUFunction(DelegateProxy, NAME_Fire);
-
-        if (Iter->second.DelegateProperty)
-        {
-            // UE_LOG(LogTemp, Warning, TEXT("bind to delegate"));
-            Iter->second.Proxy = DelegateProxy;
-            *(static_cast<FScriptDelegate*>(DelegatePtr)) = Delegate;
-        }
-        else if (Iter->second.MulticastDelegateProperty)
-        {
-            // UE_LOG(LogTemp, Warning, TEXT("add to multicast delegate, proxy: %p to:%p"), DelegateProxy, DelegatePtr);
-            Iter->second.Proxys.Add(DelegateProxy);
-    #if ENGINE_MINOR_VERSION >= 23 || ENGINE_MAJOR_VERSION > 4
-            if (Iter->second.MulticastDelegateProperty->IsA<MulticastSparseDelegatePropertyMacro>())
-            {
-                Iter->second.MulticastDelegateProperty->AddDelegate(MoveTemp(Delegate), Iter->second.Owner.Get(), DelegatePtr);
-            }
-            else
-    #endif
-            {
-                static_cast<FMulticastScriptDelegate*>(DelegatePtr)->AddUnique(Delegate);
-            }
-        }
-        return true;
-    }
-
-    PropertyMacro* NFJsScriptModule::FindDelegateProperty(void* DelegatePtr)
-    {
-        auto Iter = DelegateMap.find(DelegatePtr);
-        if (Iter == DelegateMap.end())
-        {
-            return nullptr;
-        }
-        return Iter->second.DelegateProperty ? (PropertyMacro*) Iter->second.DelegateProperty
-                                            : (PropertyMacro*) Iter->second.MulticastDelegateProperty;
-    }
-
-    FScriptDelegate NFJsScriptModule::NewManualReleaseDelegate( v8::Isolate* Isolate, v8::Local<v8::Context>& Context, v8::Local<v8::Function> JsFunction, UFunction* SignatureFunction)
-    {
-        auto CallbacksMap = ManualReleaseCallbackMap.Get(Isolate);
-        auto MaybeProxy = CallbacksMap->Get(Context, JsFunction);
-        UDynamicDelegateProxy* DelegateProxy = nullptr;
-        if (MaybeProxy.IsEmpty() || !MaybeProxy.ToLocalChecked()->IsExternal())
-        {
-            DelegateProxy = NewObject<UDynamicDelegateProxy>();
-    #ifdef THREAD_SAFE
-            DelegateProxy->Isolate = Isolate;
-    #endif
-            DelegateProxy->Owner = DelegateProxy;
-            DelegateProxy->SignatureFunction = SignatureFunction;
-            DelegateProxy->DynamicInvoker = DynamicInvoker;
-            DelegateProxy->JsFunction = v8::UniquePersistent<v8::Function>(Isolate, JsFunction);
-
-            SysObjectRetainer.Retain(DelegateProxy);
-            __USE(CallbacksMap->Set(Context, JsFunction, v8::External::New(Context->GetIsolate(), DelegateProxy)));
-
-            ManualReleaseCallbackList.push_back(DelegateProxy);
-        }
-        else
-        {
-            DelegateProxy =Cast<UDynamicDelegateProxy>(static_cast<UObject*>(v8::Local<v8::External>::Cast(MaybeProxy.ToLocalChecked())->Value()));
-        }
-
-        FScriptDelegate Delegate;
-        Delegate.BindUFunction(DelegateProxy, NAME_Fire);
-        return Delegate;
-    }
-
-    void NFJsScriptModule::ReleaseManualReleaseDelegate(const v8::FunctionCallbackInfo<v8::Value>& Info)
-    {
-        v8::Isolate* Isolate = Info.GetIsolate();
-        v8::Isolate::Scope IsolateScope(Isolate);
-        v8::HandleScope HandleScope(Isolate);
-        v8::Local<v8::Context> Context = Isolate->GetCurrentContext();
-        v8::Context::Scope ContextScope(Context);
-
-        CHECK_V8_ARGS(EArgFunction);
-
-        auto CallbacksMap = ManualReleaseCallbackMap.Get(Isolate);
-        auto MaybeProxy = CallbacksMap->Get(Context, Info[0]);
-        if (!MaybeProxy.IsEmpty() && MaybeProxy.ToLocalChecked()->IsExternal())
-        {
-            __USE(CallbacksMap->Delete(Context, Info[0]));
-            auto DelegateProxy =
-                Cast<UDynamicDelegateProxy>(static_cast<UObject*>(v8::Local<v8::External>::Cast(MaybeProxy.ToLocalChecked())->Value()));
-            for (auto it = ManualReleaseCallbackList.begin(); it != ManualReleaseCallbackList.end();)
-            {
-                if (!it->IsValid())
-                {
-                    it = ManualReleaseCallbackList.erase(it);
-                }
-                else if (it->Get() == DelegateProxy)
-                {
-                    DelegateProxy->JsFunction.Reset();
-                    it = ManualReleaseCallbackList.erase(it);
-                    SysObjectRetainer.Release(DelegateProxy);
-                }
-                else
-                {
-                    ++it;
-                }
-            }
-        }
-    }
-
-    bool NFJsScriptModule::RemoveFromDelegate(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, void* DelegatePtr, v8::Local<v8::Function> JsFunction)
-    {
-        auto Iter = DelegateMap.find(DelegatePtr);
-        if (Iter == DelegateMap.end())
-        {
-            return false;
-        }
-
-        FScriptDelegate Delegate;
-
-        if (Iter->second.DelegateProperty)
-        {
-            return ClearDelegate(Isolate, Context, DelegatePtr);
-        }
-        else if (Iter->second.MulticastDelegateProperty)
-        {
-            auto JSObject = Iter->second.JSObject.Get(Isolate);
-            auto Map = v8::Local<v8::Map>::Cast(JSObject->Get(Context, 0).ToLocalChecked());
-            auto MaybeValue = Map->Get(Context, JsFunction);
-
-            if (MaybeValue.IsEmpty())
-            {
-                return false;
-            }
-
-            auto MaybeProxy = MaybeValue.ToLocalChecked();
-            if (!MaybeProxy->IsExternal())
-            {
-                return false;
-            }
-
-            auto DelegateProxy = Cast<UDynamicDelegateProxy>(static_cast<UObject*>(v8::Local<v8::External>::Cast(MaybeProxy)->Value()));
-
-            Delegate.BindUFunction(DelegateProxy, NAME_Fire);
-
-    #if ENGINE_MINOR_VERSION >= 23 || ENGINE_MAJOR_VERSION > 4
-            if (Iter->second.MulticastDelegateProperty->IsA<MulticastSparseDelegatePropertyMacro>())
-            {
-                Iter->second.MulticastDelegateProperty->RemoveDelegate(Delegate, Iter->second.Owner.Get(), DelegatePtr);
-            }
-            else
-    #endif
-            {
-                static_cast<FMulticastScriptDelegate*>(DelegatePtr)->Remove(Delegate);
-            }
-
-            auto ReturnVal = Map->Delete(Context, JsFunction);
-
-            Iter->second.Proxys.Remove(DelegateProxy);
-            SysObjectRetainer.Release(DelegateProxy);
-            DelegateProxy->JsFunction.Reset();
-        }
-
-        return true;
-    }
-
-    bool NFJsScriptModule::ClearDelegate(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, void* DelegatePtr)
-    {
-        auto Iter = DelegateMap.find(DelegatePtr);
-        if (Iter == DelegateMap.end())
-        {
-            return false;
-        }
-
-        auto JSObject = Iter->second.JSObject.Get(Isolate);
-        auto Map = v8::Local<v8::Map>::Cast(JSObject->Get(Context, 0).ToLocalChecked());
-        Map->Clear();
-
-        if (Iter->second.DelegateProperty)
-        {
-            if (Iter->second.Proxy.IsValid())
-            {
-                if (Iter->second.Owner.IsValid())
-                {
-                    FScriptDelegate Delegate;
-                    *(static_cast<FScriptDelegate*>(DelegatePtr)) = Delegate;
-                }
-
-                SysObjectRetainer.Release(Iter->second.Proxy.Get());
-                Iter->second.Proxy->JsFunction.Reset();
-                Iter->second.Proxy.Reset();
-            }
-        }
-        else if (Iter->second.MulticastDelegateProperty)
-        {
-            if (Iter->second.Owner.IsValid())
-            {
-    #if ENGINE_MINOR_VERSION >= 23 || ENGINE_MAJOR_VERSION > 4
-                if (Iter->second.MulticastDelegateProperty->IsA<MulticastSparseDelegatePropertyMacro>())
-                {
-                    Iter->second.MulticastDelegateProperty->ClearDelegate(Iter->second.Owner.Get(), DelegatePtr);
-                }
-                else
-    #endif
-                {
-                    static_cast<FMulticastScriptDelegate*>(DelegatePtr)->Clear();
-                }
-            }
-
-            for (auto ProxyIter = Iter->second.Proxys.CreateIterator(); ProxyIter; ++ProxyIter)
-            {
-                if (!(*ProxyIter).IsValid())
-                {
-                    continue;
-                }
-                (*ProxyIter)->JsFunction.Reset();
-                SysObjectRetainer.Release((*ProxyIter).Get());
-            }
-            Iter->second.Proxys.Empty();
-        }
-
-        return true;
-    }
-
-    bool NFJsScriptModule::CheckDelegateProxies(float Tick)
-    {
-
-        auto Isolate = MainIsolate;
-    #ifdef THREAD_SAFE
-        v8::Locker Locker(Isolate);
-    #endif
-
-        std::vector<void*> PendingToRemove;
-        for (auto& KV : DelegateMap)
-        {
-            if (!KV.second.Owner.IsValid())
-            {
-                PendingToRemove.push_back(KV.first);
-            }
-        }
-
-        if (PendingToRemove.size() > 0)
-        {
-            v8::Isolate::Scope IsolateScope(Isolate);
-            v8::HandleScope HandleScope(Isolate);
-            v8::Local<v8::Context> Context = DefaultContext.Get(Isolate);
-            v8::Context::Scope ContextScope(Context);
-            for (int i = 0; i < PendingToRemove.size(); ++i)
-            {
-                ClearDelegate(Isolate, Context, PendingToRemove[i]);
-                if (!DelegateMap[PendingToRemove[i]].PassByPointer)
-                {
-                    delete ((FScriptDelegate*) PendingToRemove[i]);
-                }
-                DelegateMap.erase(PendingToRemove[i]);
-            }
-        }
-
-        // Collecting invalid function translators to remove.
-        std::vector<UFunction*> PendingToRemoveJsCallbacks;
-        for (auto& KV : JsCallbackPrototypeMap)
-        {
-            if ((nullptr == KV.first) || (!KV.second->IsValid()))
-            {
-                PendingToRemoveJsCallbacks.push_back(KV.first);
-            }
-        }
-
-        if (PendingToRemoveJsCallbacks.size() > 0)
-        {
-            for (int32 i = 0; i < PendingToRemoveJsCallbacks.size(); i++)
-            {
-                JsCallbackPrototypeMap.erase(PendingToRemoveJsCallbacks[i]);
-            }
-        }
-
-        return true;
-    }
-
-FPropertyTranslator* NFJsScriptModule::GetContainerPropertyTranslator(PropertyMacro* Property)
-{
-    auto Iter = ContainerPropertyMap.find(Property);
-    // TODO: 如果脚本一直持有蓝图里头的Map，还是有可能有问题的，需要统筹考虑一套机制解决这类问题
-    if (Iter == ContainerPropertyMap.end() || !Iter->second.PropertyWeakPtr.IsValid())
-    {
-        ContainerPropertyInfo Temp{Property, FPropertyTranslator::Create(Property)};
-            ContainerPropertyMap[Property] = std::move(Temp);
-#if ENGINE_MINOR_VERSION < 25 && ENGINE_MAJOR_VERSION < 5
-        if (!Property->IsNative())
-        {
-            SysObjectRetainer.Retain(Property);
-        }
- #endif
-        return ContainerPropertyMap[Property].PropertyTranslator.get();
     }
     else
     {
-        return Iter->second.PropertyTranslator.get();
+        Logger->InfoWarn("not find js module ["+ModuleName.ToString()+"]");
+        return;
     }
 }
 
-v8::Local<v8::Value> NFJsScriptModule::FindOrAddContainer(v8::Isolate* Isolate, v8::Local<v8::Context>& Context,v8::Local<v8::Function> Constructor, PropertyMacro* Property1, PropertyMacro* Property2, void* Ptr, bool PassByPointer)
+void NFJsScriptModule::ReloadModule(std::string ModuleName, const std::string& JsSource)
 {
-    check(Ptr);    // must not null
 
-    auto PersistentValuePtr = ContainerCache.Find(Ptr);
-    if (PersistentValuePtr)
-    {
-        return v8::Local<v8::Value>::New(Isolate, *PersistentValuePtr);
-    }
-
-    auto BindTo = v8::External::New(Context->GetIsolate(), Ptr);
-    v8::Handle<v8::Value> Args[] = {BindTo, v8::Boolean::New(Isolate, PassByPointer)};
-    auto Result = Constructor->NewInstance(Context, 2, Args).ToLocalChecked();
-    DataTransfer::SetPointer(Isolate, Result, GetContainerPropertyTranslator(Property1), 1);
-    if (Property2)
-    {
-        DataTransfer::SetPointer(Isolate, Result, GetContainerPropertyTranslator(Property2), 2);
-    } 
-    return Result;
+#ifdef THREAD_SAFE
+    v8::Locker Locker(MainIsolate);
+#endif
+    // Logger->Info(FString::Printf(TEXT("start reload js module [%s]"), *ModuleName.ToString()));
+    JsHotReload(ModuleName, JsSource);
 }
 
+void NFJsScriptModule::ReloadSource(const std::string& Path, const std::string& JsSource)
+{
+
+    auto Isolate = MainIsolate;
+    v8::Isolate::Scope IsolateScope(Isolate);
+    v8::HandleScope HandleScope(Isolate);
+    auto Context = DefaultContext.Get(Isolate);
+    v8::Context::Scope ContextScope(Context);
+    auto LocalReloadJs = ReloadJs.Get(Isolate);
+
+    std::ostringstream stream;
+    stream << "reload js [" << *Path <<"]";
+    Logger->LogInfo(stream);
+    v8::TryCatch TryCatch(Isolate);
+    v8::Handle<v8::Value> Args[] = {v8::Undefined(Isolate), FV8Utils::ToV8String(Isolate, Path), FV8Utils::ToV8String(Isolate, JsSource.c_str())};
+
+        auto MaybeRet = LocalReloadJs->Call(Context, v8::Undefined(Isolate), 3, Args);
+
+    if (TryCatch.HasCaught())
+    {
+        std::ostringstream streama;
+        streama << "reload module exception " << FV8Utils::TryCatchToString(Isolate, &TryCatch));
+        Logger->LogError(streama);
+    }
+}
+
+void NFJsScriptModule::OnSourceLoaded(std::function<void(const FString&)> Callback)
+{
+    OnSourceLoadedCallback = Callback;
+}
+
+std::string NFJsScriptModule::CurrentStackTrace()
+{
+    return "";
+}
+
+
+v8::Local<v8::Value> NFJsScriptModule::FindOrAddCppObject(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, const void* TypeId, void* Ptr, bool PassByPointer)
+{
+    return CppObjectMapper.FindOrAddCppObject(Isolate, Context, TypeId, Ptr, PassByPointer);
+}
+
+   
 
 void NFJsScriptModule::BindCppObject(v8::Isolate* InIsolate, JSClassDefinition* ClassDefinition, void* Ptr, v8::Local<v8::Object> JSObject, bool PassByPointer)
 {
@@ -2295,17 +1724,6 @@ void NFJsScriptModule::UnBindCppObject(JSClassDefinition* ClassDefinition, void*
     CppObjectMapper.UnBindCppObject(ClassDefinition, Ptr);
 }
 
-void NFJsScriptModule::BindContainer(void* Ptr, v8::Local<v8::Object> JSObject, void (*Callback)(const v8::WeakCallbackInfo<void>& data))
-{
-    DataTransfer::SetPointer(MainIsolate, JSObject, Ptr, 0);
-    ContainerCache.Emplace(Ptr, v8::UniquePersistent<v8::Value>(MainIsolate, JSObject));
-    ContainerCache[Ptr].SetWeak<void>(nullptr, Callback, v8::WeakCallbackType::kInternalFields);
-}
-
-void NFJsScriptModule::UnBindContainer(void* Ptr)
-{
-    ContainerCache.Remove(Ptr);
-}
 
 bool NFJsScriptModule::IsInstanceOfCppObject(const void* TypeId, v8::Local<v8::Object> JsObject)
 {
@@ -2315,31 +1733,6 @@ bool NFJsScriptModule::IsInstanceOfCppObject(const void* TypeId, v8::Local<v8::O
 void NFJsScriptModule::LoadCppType(const v8::FunctionCallbackInfo<v8::Value>& Info)
 {
     CppObjectMapper.LoadCppType(Info);
-}
-
-bool NFJsScriptModule::GetContainerTypeProperty(v8::Local<v8::Context> Context, v8::Local<v8::Value> Value, PropertyMacro** PropertyPtr)
-{
-    if (Value->IsInt32())
-    {
-        int Type = Value->Int32Value(Context).ToChecked();
-        if (Type >= MaxBuiltinType)
-        {
-            *PropertyPtr = nullptr;
-            return false;
-        }
-        *PropertyPtr = ContainerMeta.GetBuiltinProperty((BuiltinType) Type);
-        return true;
-    }
-    else if (auto Field = Cast<UField>(FV8Utils::GetUObject(Context, Value)))
-    {
-        *PropertyPtr = ContainerMeta.GetObjectProperty(Field);
-        return *PropertyPtr != nullptr;
-    }
-    else
-    {
-        *PropertyPtr = nullptr;
-        return false;
-    }
 }
 
 
