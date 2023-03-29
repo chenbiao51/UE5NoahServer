@@ -59,12 +59,10 @@ void NFJsScriptPlugin::Install()
 {
 	REGISTER_MODULE(pPluginManager, NFIJsScriptModule, NFJsScriptModule)
 	REGISTER_MODULE(pPluginManager, NFIJsPBModule, NFJsPBModule)
-    REGISTER_MODULE(pPluginManager, NFIJsEnvModule, NFJsEnvModule)
 }
 
 void NFJsScriptPlugin::Uninstall()
 {
 	UNREGISTER_MODULE(pPluginManager, NFIJsScriptModule, NFJsScriptModule)
     UNREGISTER_MODULE(pPluginManager, NFIJsPBModule, NFJsPBModule)
-    UNREGISTER_MODULE(pPluginManager, NFIJsEnvModule, NFJsEnvModule)
 }

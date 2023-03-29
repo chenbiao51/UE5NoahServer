@@ -33,8 +33,7 @@
 typedef std::function<int(const NFGUID&, const std::string&, const CLASS_OBJECT_EVENT, const NFDataList&)> CLASS_EVENT_FUNCTOR;
 typedef NF_SHARE_PTR<CLASS_EVENT_FUNCTOR> CLASS_EVENT_FUNCTOR_PTR;//EVENT
 
-class NFIClass
-    : public NFList<std::string>//include files
+class NFIClass: public NFList<std::string>//include files
 {
 public:
     virtual ~NFIClass() {}
@@ -57,9 +56,7 @@ public:
     virtual bool DoEvent(const NFGUID& objectID, const CLASS_OBJECT_EVENT classEvent, const NFDataList& valueList) = 0;
 };
 
-class NFIClassModule
-    : public NFIModule,
-  public NFMapEx<std::string, NFIClass>
+class NFIClassModule: public NFIModule,public NFMapEx<std::string, NFIClass>
 {
 public:
     virtual ~NFIClassModule() {}

@@ -174,10 +174,7 @@ protected:
 	void RemoveMsgCallBackAsClient(const NF_SERVER_TYPES serverType, const int msgID);
 	void AddMsgCallBackAsClient(const NF_SERVER_TYPES serverType, const int msgID, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
 
-/*
-	void RemoveHttpCallBack(const std::string& path);
-	void AddHttpCallBack(const std::string& path, const int httpType, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
-*/
+
 
     void ImportProtoFile(const std::string& fileName);
     const std::string Encode(const std::string& msgTypeName, const LuaIntf::LuaRef& luaTable);
@@ -194,11 +191,6 @@ protected:
 	void SendToAllPlayer(const uint16_t msgID, const std::string& data);
     void SendToGroupPlayer(const uint16_t msgID, const std::string& data);
 
-	//for log
-	void LogInfo(const std::string& logData);
-	void LogError(const std::string& logData);
-	void LogWarning(const std::string& logData);
-	void LogDebug(const std::string& logData);
 
     //hot fix
 	void SetVersionCode(const std::string& logData);
@@ -281,18 +273,18 @@ public:
 
     virtual void RequestFullGarbageCollectionForTesting() override;
 
-    virtual void WaitDebugger(double timeout) override
+    virtual void WaitDebugger(int64_t timeout) override
     {
 #ifdef THREAD_SAFE
         v8::Locker Locker(MainIsolate);
 #endif
-        const auto startTime = FDateTime::Now();
+        const auto startTime = NFGetTimeS();
         while (Inspector && !Inspector->Tick())
         {
             if (timeout > 0)
             {
-                auto now = FDateTime::Now();
-                if ((now - startTime).GetTotalSeconds() >= timeout)
+                auto now = NFGetTimeS();
+                if ((now - startTime) >= timeout)
                 {
                     break;
                 }
@@ -373,8 +365,7 @@ private:
 
     std::shared_ptr<IJSModuleLoader> ModuleLoader;
 
-    std::shared_ptr<NFILogModule> Logger;
-
+    
     bool Started;
 
 private:
@@ -394,7 +385,15 @@ private:
     v8::Global<v8::Function> ReloadJs;
 
     FCppObjectMapper CppObjectMapper;
-
+    
+    struct  TickDelegateInfo
+    {
+        v8::Isolate *Isolate;
+        v8::Global<v8::Context> DefaultContext;
+        v8::Global<v8::Function> DefaultFunction;
+        std::function<void(v8::Isolate*,v8::TryCatch*)> exceptionHandler;
+    };
+    std::map<std::string,TickDelegateInfo> TickerDelegateMap;
 
     v8::UniquePersistent<v8::FunctionTemplate> DelegateTemplate;
 
@@ -402,7 +401,6 @@ private:
 
     v8::UniquePersistent<v8::FunctionTemplate> SoftObjectPtrTemplate;
 
-    std::map<void*, DelegateObjectInfo> DelegateMap;
 
     bool ExtensionMethodsMapInited = false;
 

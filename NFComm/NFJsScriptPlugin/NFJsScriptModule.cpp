@@ -841,16 +841,6 @@ void NFJsScriptModule::AddMsgCallBackAsClient(const NF_SERVER_TYPES serverType, 
 	}
 }
 
-/*
-void NFJsScriptModule::RemoveHttpCallBack(const std::string & path)
-{
-}
-
-void NFJsScriptModule::AddHttpCallBack(const std::string & path, const int httpType, const LuaIntf::LuaRef & luaTable, const LuaIntf::LuaRef & luaFunc)
-{
-}
-*/
-
 void NFJsScriptModule::ImportProtoFile(const std::string& fileName)
 {
 	NFJsPBModule* p = (NFJsPBModule*)m_pJsPBModule;
@@ -950,25 +940,7 @@ void NFJsScriptModule::SendToAllPlayer(const uint16_t msgID, const std::string& 
 	}
 }
 
-void NFJsScriptModule::LogInfo(const std::string& logData)
-{
-	m_pLogModule->LogInfo(logData);
-}
 
-void NFJsScriptModule::LogError(const std::string& logData)
-{
-	m_pLogModule->LogError(logData);
-}
-
-void NFJsScriptModule::LogWarning(const std::string& logData)
-{
-	m_pLogModule->LogWarning(logData);
-}
-
-void NFJsScriptModule::LogDebug(const std::string& logData)
-{
-	m_pLogModule->LogDebug(logData);
-}
 
 void NFJsScriptModule::SetVersionCode(const std::string& logData)
 {
@@ -980,163 +952,7 @@ const std::string&  NFJsScriptModule::GetVersionCode()
     return strVersionCode;
 }
 
-bool NFJsScriptModule::Register()
-{
 
-	LuaIntf::LuaBinding(mLuaContext).beginClass<NFGUID>("NFGUID")
-		.addConstructor(LUA_ARGS())
-		.addProperty("data", &NFGUID::GetData, &NFGUID::SetData)
-		.addProperty("head", &NFGUID::GetHead, &NFGUID::SetHead)
-		.addFunction("tostring", &NFGUID::ToString)
-		.addFunction("fromstring", &NFGUID::FromString)
-		.endClass();
-
-	LuaIntf::LuaBinding(mLuaContext).beginClass<NFDataList>("NFDataList")
-		.endClass();
-
-	LuaIntf::LuaBinding(mLuaContext).beginExtendClass<NFDataList, NFDataList>("NFDataList")
-		.addConstructor(LUA_ARGS())
-		.addFunction("empty", &NFDataList::IsEmpty)
-		.addFunction("count", &NFDataList::GetCount)
-		.addFunction("tye", &NFDataList::Type)
-
-		.addFunction("add_int", &NFDataList::AddInt)
-		.addFunction("add_float", &NFDataList::AddFloat)
-		.addFunction("add_string", &NFDataList::AddStringFromChar)
-		.addFunction("add_object", &NFDataList::AddObject)
-		.addFunction("add_vector2", &NFDataList::AddVector2)
-		.addFunction("add_vector3", &NFDataList::AddVector3)
-
-		.addFunction("set_int", &NFDataList::SetInt)
-		.addFunction("set_float", &NFDataList::SetFloat)
-		.addFunction("set_string", &NFDataList::SetString)
-		.addFunction("set_object", &NFDataList::SetObject)
-		.addFunction("set_vector2", &NFDataList::SetVector2)
-		.addFunction("set_vector3", &NFDataList::SetVector3)
-
-		.addFunction("int", &NFDataList::Int)
-		.addFunction("float", &NFDataList::Float)
-		.addFunction("string", &NFDataList::String)
-		.addFunction("object", &NFDataList::Object)
-		.addFunction("vector2", &NFDataList::Vector2)
-		.addFunction("vector3", &NFDataList::Vector3)
-		.endClass();
-
-	LuaIntf::LuaBinding(mLuaContext).beginClass<NFData>("TData")
-		.addConstructor(LUA_ARGS())
-		.addFunction("float", &NFData::GetFloat)
-		.addFunction("int", &NFData::GetInt)
-		.addFunction("object", &NFData::GetObject)
-		.addFunction("string", &NFData::GetString)
-		.addFunction("vector2", &NFData::GetVector2)
-		.addFunction("vector3", &NFData::GetVector3)
-
-		.addFunction("type", &NFData::GetType)
-		.addFunction("is_null", &NFData::IsNullValue)
-
-		.addFunction("set_float", &NFData::SetFloat)
-		.addFunction("set_int", &NFData::SetInt)
-		.addFunction("set_object", &NFData::SetObject)
-		.addFunction("set_string", &NFData::SetString)
-		.addFunction("set_vector2", &NFData::SetVector2)
-		.addFunction("set_vector3", &NFData::SetVector3)
-		.endClass();
-	//for kernel module
-
-	LuaIntf::LuaBinding(mLuaContext).beginClass<NFJsScriptModule>("NFJsScriptModule")
-		.addFunction("register_module", &NFJsScriptModule::RegisterModule)
-		.addFunction("create_object", &NFJsScriptModule::CreateObject)
-		.addFunction("exist_object", &NFJsScriptModule::ExistObject)
-		.addFunction("destroy_object", &NFJsScriptModule::DestroyObject)
-		.addFunction("enter_scene", &NFJsScriptModule::EnterScene)
-		.addFunction("do_event", &NFJsScriptModule::DoEvent)
-
-		.addFunction("set_prop_int", &NFJsScriptModule::SetPropertyInt)
-		.addFunction("set_prop_float", &NFJsScriptModule::SetPropertyFloat)
-		.addFunction("set_prop_string", &NFJsScriptModule::SetPropertyString)
-		.addFunction("set_prop_object", &NFJsScriptModule::SetPropertyObject)
-		.addFunction("set_prop_vector2", &NFJsScriptModule::SetPropertyVector2)
-		.addFunction("set_prop_vector3", &NFJsScriptModule::SetPropertyVector3)
-
-
-		.addFunction("get_prop_int", &NFJsScriptModule::GetPropertyInt)
-		.addFunction("get_prop_float", &NFJsScriptModule::GetPropertyFloat)
-		.addFunction("get_prop_string", &NFJsScriptModule::GetPropertyString)
-		.addFunction("get_prop_object", &NFJsScriptModule::GetPropertyObject)
-		.addFunction("get_prop_vector2", &NFJsScriptModule::GetPropertyVector2)
-		.addFunction("get_prop_vector3", &NFJsScriptModule::GetPropertyVector3)
-
-		.addFunction("set_record_int", &NFJsScriptModule::SetRecordInt)
-		.addFunction("set_record_float",&NFJsScriptModule::SetRecordFloat)
-		.addFunction("set_record_string", &NFJsScriptModule::SetRecordString)
-		.addFunction("set_record_object", &NFJsScriptModule::SetRecordObject)
-		.addFunction("set_record_vector2", &NFJsScriptModule::SetPropertyVector2)
-		.addFunction("set_record_vector3", &NFJsScriptModule::SetPropertyVector3)
-
-		.addFunction("get_record_int", &NFJsScriptModule::GetRecordInt)
-		.addFunction("get_record_float", &NFJsScriptModule::GetRecordFloat)
-		.addFunction("get_record_string", &NFJsScriptModule::GetRecordString)
-		.addFunction("get_record_object", &NFJsScriptModule::GetRecordObject)
-		.addFunction("get_record_vector2", &NFJsScriptModule::GetPropertyVector2)
-		.addFunction("get_record_vector3", &NFJsScriptModule::GetPropertyVector3)
-
-		.addFunction("add_prop_cb", &NFJsScriptModule::AddPropertyCallBack)
-		.addFunction("add_record_cb", &NFJsScriptModule::AddRecordCallBack)
-		.addFunction("add_event_cb", &NFJsScriptModule::AddEventCallBack)
-		.addFunction("add_class_cb", &NFJsScriptModule::AddClassCallBack)
-		.addFunction("add_schedule", &NFJsScriptModule::AddSchedule)
-		.addFunction("add_module_schedule", &NFJsScriptModule::AddModuleSchedule)
-		.addFunction("do_event", &NFJsScriptModule::DoEvent)
-		.addFunction("add_row", &NFJsScriptModule::AddRow)
-		.addFunction("rem_row", &NFJsScriptModule::RemRow)
-
-		.addFunction("time", &NFJsScriptModule::GetNowTime)
-		.addFunction("new_id", &NFJsScriptModule::CreateId)
-		.addFunction("app_id", &NFJsScriptModule::APPId)
-		.addFunction("app_type", &NFJsScriptModule::APPType)
-
-		.addFunction("exist_ele", &NFJsScriptModule::ExistElementObject)
-		.addFunction("get_ele_list", &NFJsScriptModule::GetEleList)
-		.addFunction("get_ele_int", &NFJsScriptModule::GetElePropertyInt)
-		.addFunction("get_ele_float", &NFJsScriptModule::GetElePropertyFloat)
-		.addFunction("get_ele_string", &NFJsScriptModule::GetElePropertyString)
-		.addFunction("get_ele_vector2", &NFJsScriptModule::GetElePropertyVector2)
-		.addFunction("get_ele_vector3", &NFJsScriptModule::GetElePropertyVector3)
-
-		.addFunction("remove_msg_cb_as_server", &NFJsScriptModule::RemoveCallBackAsServer)//as server
-		.addFunction("add_msg_cb_as_server", &NFJsScriptModule::AddMsgCallBackAsServer)//as server
-		.addFunction("remove_msg_cb_as_client", &NFJsScriptModule::RemoveMsgCallBackAsClient)//as client
-		.addFunction("add_msg_cb_as_client", &NFJsScriptModule::AddMsgCallBackAsClient)//as client
-
-		//.addFunction("remove_http_cb", &NFJsScriptModule::RemoveHttpCallBack)
-		//.addFunction("add_http_cb", &NFJsScriptModule::AddHttpCallBack)
-
-		.addFunction("send_to_server_by_id", &NFJsScriptModule::SendToServerByServerID)//as client
-		.addFunction("send_to_all_server_by_type", &NFJsScriptModule::SendToAllServerByServerType)//as client
-		.addFunction("send_to_server_by_suit", &NFJsScriptModule::SendToServerBySuit)//as client
-
-		.addFunction("send_to_client_by_fd", &NFJsScriptModule::SendMsgToClientByFD)//as server
-
-		.addFunction("send_to_player", &NFJsScriptModule::SendMsgToPlayer)//as game server
-		.addFunction("send_to_group_player", &NFJsScriptModule::SendToGroupPlayer)//as game server
-		.addFunction("send_to_all_player", &NFJsScriptModule::SendToAllPlayer)//as game server
-
-		.addFunction("log_info", &NFJsScriptModule::LogInfo)
-		.addFunction("log_error", &NFJsScriptModule::LogError)
-		.addFunction("log_warning", &NFJsScriptModule::LogWarning)
-		.addFunction("log_debug", &NFJsScriptModule::LogDebug)
-
-		.addFunction("get_version_code", &NFJsScriptModule::GetVersionCode)
-		.addFunction("set_version_code", &NFJsScriptModule::SetVersionCode)
-
-		.addFunction("import_proto_file", &NFJsScriptModule::ImportProtoFile)
-		.addFunction("encode", &NFJsScriptModule::Encode)
-		.addFunction("decode", &NFJsScriptModule::Decode)
-
-		.endClass();
-
-    return true;
-}
 
 std::string NFJsScriptModule::FindFuncName(const LuaIntf::LuaRef & luaTable, const LuaIntf::LuaRef & luaFunc)
 {
@@ -1620,7 +1436,7 @@ void NFJsScriptModule::JsHotReload(std::string ModuleName, const std::string& Js
     if (ModuleLoader->Search("", ModuleName.ToString(), OutPath, OutDebugPath))
     {
         OutPath = FPaths::ConvertRelativePathToFull(OutPath);
-        Logger->LogInfo("reload js module ["+OutPath+"]");
+        m_pLogModule->LogInfo("reload js module ["+OutPath+"]");
         v8::TryCatch TryCatch(Isolate);
         v8::Handle<v8::Value> Args[] = {
             FV8Utils::ToV8String(Isolate, ModuleName), 
@@ -1631,12 +1447,12 @@ void NFJsScriptModule::JsHotReload(std::string ModuleName, const std::string& Js
 
         if (TryCatch.HasCaught())
         {
-            Logger->InfoError("reload module exception "+FV8Utils::TryCatchToString(Isolate, &TryCatch));
+            m_pLogModule->InfoError("reload module exception "+FV8Utils::TryCatchToString(Isolate, &TryCatch));
         }
     }
     else
     {
-        Logger->InfoWarn("not find js module ["+ModuleName.ToString()+"]");
+        m_pLogModule->InfoWarn("not find js module ["+ModuleName.ToString()+"]");
         return;
     }
 }
@@ -1647,7 +1463,7 @@ void NFJsScriptModule::ReloadModule(std::string ModuleName, const std::string& J
 #ifdef THREAD_SAFE
     v8::Locker Locker(MainIsolate);
 #endif
-    // Logger->Info(FString::Printf(TEXT("start reload js module [%s]"), *ModuleName.ToString()));
+    // m_pLogModule->Info(FString::Printf(TEXT("start reload js module [%s]"), *ModuleName.ToString()));
     JsHotReload(ModuleName, JsSource);
 }
 
@@ -1663,7 +1479,7 @@ void NFJsScriptModule::ReloadSource(const std::string& Path, const std::string& 
 
     std::ostringstream stream;
     stream << "reload js [" << *Path <<"]";
-    Logger->LogInfo(stream);
+    m_pLogModule->LogInfo(stream);
     v8::TryCatch TryCatch(Isolate);
     v8::Handle<v8::Value> Args[] = {v8::Undefined(Isolate), FV8Utils::ToV8String(Isolate, Path), FV8Utils::ToV8String(Isolate, JsSource.c_str())};
 
@@ -1673,7 +1489,7 @@ void NFJsScriptModule::ReloadSource(const std::string& Path, const std::string& 
     {
         std::ostringstream streama;
         streama << "reload module exception " << FV8Utils::TryCatchToString(Isolate, &TryCatch));
-        Logger->LogError(streama);
+        m_pLogModule->LogError(streama);
     }
 }
 
@@ -1725,7 +1541,7 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
 
     if (Started)
     {
-        Logger->Error("Started yet!");
+        m_pLogModule->Error("Started yet!");
         return;
     }
 
@@ -1742,7 +1558,7 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
 
     if (MaybeTGameTGJS.IsEmpty() || !MaybeTGameTGJS.ToLocalChecked()->IsObject())
     {
-        Logger->Error("global.puerts not found!");
+        m_pLogModule->Error("global.puerts not found!");
         return;
     }
 
@@ -1752,7 +1568,7 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
 
     if (MaybeArgv.IsEmpty() || !MaybeArgv.ToLocalChecked()->IsObject())
     {
-        Logger->Error("global.puerts.argv not found!");
+        m_pLogModule->Error("global.puerts.argv not found!");
         return;
     }
 
@@ -1762,7 +1578,7 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
 
     if (MaybeArgvAdd.IsEmpty() || !MaybeArgvAdd.ToLocalChecked()->IsFunction())
     {
-        Logger->Error("global.puerts.argv.add not found!");
+        m_pLogModule->Error("global.puerts.argv.add not found!");
         return;
     }
 
@@ -1784,13 +1600,13 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
         auto CompiledScript = v8::Script::Compile(Context, Source, &Origin);
         if (CompiledScript.IsEmpty())
         {
-            Logger->Error(FV8Utils::TryCatchToString(Isolate, &TryCatch));
+            m_pLogModule->Error(FV8Utils::TryCatchToString(Isolate, &TryCatch));
             return;
         }
         auto ReturnVal = CompiledScript.ToLocalChecked()->Run(Context);
         if (TryCatch.HasCaught())
         {
-            Logger->Error(FV8Utils::TryCatchToString(Isolate, &TryCatch));
+            m_pLogModule->Error(FV8Utils::TryCatchToString(Isolate, &TryCatch));
         }
     }
     else
@@ -1800,7 +1616,7 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
         __USE(Require.Get(Isolate)->Call(Context, v8::Undefined(Isolate), 1, Args));
         if (TryCatch.HasCaught())
         {
-            Logger->Error(FV8Utils::TryCatchToString(Isolate, &TryCatch));
+            m_pLogModule->Error(FV8Utils::TryCatchToString(Isolate, &TryCatch));
         }
     }
     Started = true;
@@ -1815,7 +1631,7 @@ bool NFJsScriptModule::LoadFile(const std::string& RequiringDir, const std::stri
             std::ostringstream stream;
             stream <<"can not load ["<< *ModuleName <<"]";
             ErrInfo = stream.str();
-            //Logger->LogInfo(stream.str());
+            //m_pLogModule->LogInfo(stream.str());
             return false;
         }
     }
@@ -1839,7 +1655,7 @@ void NFJsScriptModule::ExecuteModule(const std::string& ModuleName, std::functio
         std::string ErrInfo;
         if (!LoadFile("", ModuleName, OutPath, DebugPath, Data, ErrInfo))
         {
-            Logger->LogError(ErrInfo);
+            m_pLogModule->LogError(ErrInfo);
             return;
         }
 
@@ -1872,13 +1688,13 @@ void NFJsScriptModule::ExecuteModule(const std::string& ModuleName, std::functio
         auto CompiledScript = v8::Script::Compile(Context, Source, &Origin);
         if (CompiledScript.IsEmpty())
         {
-            Logger->LogError(FV8Utils::TryCatchToString(Isolate, &TryCatch));
+            m_pLogModule->LogError(FV8Utils::TryCatchToString(Isolate, &TryCatch));
             return;
         }
     auto ReturnVal = CompiledScript.ToLocalChecked()->Run(Context);
     if (TryCatch.HasCaught())
     {
-        Logger->LogError(FV8Utils::TryCatchToString(Isolate, &TryCatch));
+        m_pLogModule->LogError(FV8Utils::TryCatchToString(Isolate, &TryCatch));
         return;
     }
 }
@@ -1935,16 +1751,16 @@ void NFJsScriptModule::Log(const v8::FunctionCallbackInfo<v8::Value>& Info)
     switch (Level)
     {
         case 1:
-            Logger->LogInfo(Msg);
+            m_pLogModule->LogInfo(Msg);
             break;
         case 2:
-            Logger->LogWarn(Msg);
+            m_pLogModule->LogWarn(Msg);
             break;
         case 3:
-            Logger->LogError(Msg);
+            m_pLogModule->LogError(Msg);
             break;
         default:
-            Logger->LogInfo(Msg);
+            m_pLogModule->LogInfo(Msg);
             break;
     }
 }
@@ -2078,12 +1894,12 @@ void NFJsScriptModule::ClearInterval(const v8::FunctionCallbackInfo<v8::Value>& 
     // todo - mocha 7.0.1，当reporter为JSON，调用clearTimeout时，可能不传值，或传Null、Undefined过来。暂将其忽略
     if (Info.Length() == 0)
     {
-        Logger->Warn("Calling ClearInterval with 0 argument.");
+        m_pLogModule->Warn("Calling ClearInterval with 0 argument.");
     }
     else if (Info[0]->IsNullOrUndefined())
     {
         // 屏蔽这条只在mocha中出现的警告
-        // Logger->Warn(TEXT("Calling ClearInterval with a Null or Undefined."));
+        // m_pLogModule->Warn(TEXT("Calling ClearInterval with a Null or Undefined."));
     }
     else
     {
@@ -2160,8 +1976,9 @@ void NFJsScriptModule::SetInspectorCallback(const v8::FunctionCallbackInfo<v8::V
                 __USE(Handler->Call(ContextInner, ContextInner->Global(), 1, Args));
                 if (TryCatch.HasCaught())
                 {
-                    Logger->Error(FString::Printf(
-                        TEXT("inspector callback exception %s"), *FV8Utils::TryCatchToString(MainIsolate, &TryCatch)));
+                    std::stringstream  ss;
+                    ss  <<"inspector callback exception"<<FV8Utils::TryCatchToString(MainIsolate, &TryCatch);
+                    m_pLogModule->Error(ss.str());
                 }
             });
     }
@@ -2199,27 +2016,23 @@ void NFJsScriptModule::DumpStatisticsLog(const v8::FunctionCallbackInfo<v8::Valu
     v8::Context::Scope ContextScope(Context);
 
     Isolate->GetHeapStatistics(&Statistics);
-
-    std::string StatisticsLog = FString::Printf(TEXT("------------------------\n"
-                                                 "Dump Statistics of V8:\n"
-                                                 "total_heap_size: %u\n"
-                                                 "total_heap_size_executable: %u\n"
-                                                 "total_physical_size: %u\n"
-                                                 "total_available_size: %u\n"
-                                                 "used_heap_size: %u\n"
-                                                 "heap_size_limit: %u\n"
-                                                 "malloced_memory: %u\n"
-                                                 "external_memory: %u\n"
-                                                 "peak_malloced_memory: %u\n"
-                                                 "number_of_native_contexts: %u\n"
-                                                 "number_of_detached_contexts: %u\n"
-                                                 "does_zap_garbage: %u\n"
-                                                 "------------------------\n"),
-        Statistics.total_heap_size(), Statistics.total_heap_size_executable(), Statistics.total_physical_size(),
-        Statistics.total_available_size(), Statistics.used_heap_size(), Statistics.heap_size_limit(), Statistics.malloced_memory(),
-        Statistics.external_memory(), Statistics.peak_malloced_memory(), Statistics.number_of_native_contexts(),
-        Statistics.number_of_detached_contexts(), Statistics.does_zap_garbage());
-
-    Logger->Info(StatisticsLog);
+    std::stringstream  ss;
+    ss  <<"------------------------\n"
+        <<"Dump Statistics of V8:\n"
+        <<"total_heap_size: "<< Statistics.total_heap_size() <<"\n"
+        <<"total_heap_size_executable:"<< Statistics.total_heap_size_executable() <<"\n"
+        << "total_physical_size: "<< Statistics.total_physical_size() <<"\n"
+        << "total_available_size: "<< Statistics.total_available_size() <<"\n"
+        << "used_heap_size: "<< Statistics.used_heap_size() <<"\n"
+        << "heap_size_limit: "<< Statistics.heap_size_limit() <<"\n"
+        << "malloced_memory: "<< Statistics.malloced_memory() <<"\n"
+        << "external_memory: "<< Statistics.external_memory() <<"\n"
+        << "peak_malloced_memory: "<< Statistics.peak_malloced_memory() <<"\n"
+        << "number_of_native_contexts: "<< Statistics.number_of_native_contexts() <<"\n"
+        << "number_of_detached_contexts: "<< Statistics.number_of_detached_contexts() <<"\n"
+        << "does_zap_garbage: "<< Statistics.does_zap_garbage() <<"\n"
+        << "------------------------\n";
+    std::string StatisticsLog = ss.str();
+    m_pLogModule->Info(StatisticsLog);
 
 }
