@@ -345,9 +345,9 @@ bool NFJsScriptModule::AddSchedule(const NFGUID& self, std::string& strHeartBeat
 	std::string luaFuncName = FindFuncName(luaTable, luaFunc);
 	if (!luaFuncName.empty())
 	{
-		if (AddLuaFuncToMap(mxLuaHeartBeatCallBackFuncMap, self, strHeartBeatName, luaFuncName))
+		if (AddLuaFuncToMap(mxJsHeartBeatCallBackFuncMap, self, strHeartBeatName, luaFuncName))
 		{
-			m_pScheduleModule->AddSchedule(self, strHeartBeatName, this, &NFJsScriptModule::OnLuaHeartBeatCB, time, count);
+			m_pScheduleModule->AddSchedule(self, strHeartBeatName, this, &NFJsScriptModule::OnTimeOutHeartBeatCB, time, count);
 		}
 
 		return true;
@@ -359,7 +359,7 @@ bool NFJsScriptModule::AddSchedule(const NFGUID& self, std::string& strHeartBeat
 int NFJsScriptModule::OnTimeOutHeartBeatCB(const NFGUID& self, const std::string& strHeartBeatName, const float time, const int count)
 {
 
-	auto funcList = mxLuaHeartBeatCallBackFuncMap.GetElement(strHeartBeatName);
+	auto funcList = TickerDelegateHandleMap.GetElement(self);
 	if (funcList)
 	{
 		auto funcNameList = funcList->GetElement(self);
@@ -1027,12 +1027,12 @@ NFJsScriptModule::~NFJsScriptModule()
     v8::Isolate::Scope IsolateScope(Isolate);
     v8::HandleScope HandleScope(Isolate);
 
-    CppObjectMapper.UnInitialize(Isolate)
+    CppObjectMapper.UnInitialize(Isolate);
 
 
     for (auto& Pair : TickerDelegateHandleMap)
     {
-        FTicker::GetCoreTicker().RemoveTicker(*(Pair.first));
+        m_pScheduleModule->RemoveSchedule(*(Pair.first));
         delete Pair.first;
         delete Pair.second;
     }
@@ -1041,8 +1041,7 @@ NFJsScriptModule::~NFJsScriptModule()
     node::EmitExit(NodeEnv);
     node::Stop(NodeEnv);
     node::FreeEnvironment(NodeEnv);
-    v8::Dispose();
-    v8::ShutdownPlatform();
+    node::FreeIsolateData(NodeIsolateData);
 
     if (InspectorChannel)
     {
@@ -1065,6 +1064,9 @@ NFJsScriptModule::~NFJsScriptModule()
     DefaultContext.Reset();
     MainIsolate->Dispose();
     MainIsolate = nullptr;
+
+    v8::V8::Dispose();
+    v8::V8::ShutdownPlatform();
 }
 
 
@@ -1269,8 +1271,8 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
 
     for (int i = 0; i < Arguments.size(); i++)
     {
-        auto Object = Arguments[i].Value;
-        v8::Local<v8::Value> Args[2] = {FV8Utils::ToV8String(Isolate, Arguments[i].Key), FindOrAdd(Isolate, Context, Object->GetClass(), Object)};
+        auto Object = Arguments[i].second;
+        v8::Local<v8::Value> Args[2] = {FV8Utils::ToV8String(Isolate, Arguments[i].first), FindOrAdd(Isolate, Context, Object->GetClass(), Object)};
         auto Result = ArgvAdd->Call(Context, Argv, 2, Args);
     }
 

@@ -216,7 +216,7 @@ protected:
     NFIScheduleModule* m_pScheduleModule;
     NFINetClientModule* m_pNetClientModule;
     NFINetModule* m_pNetModule;
-    NFILogModule* m_pLogModule;
+    std::shared_ptr<NFILogModule> m_pLogModule;
 	NFIJsPBModule* m_pJsPBModule;
 	
 protected:
@@ -227,7 +227,7 @@ protected:
     NFMap<std::string, NFMap<NFGUID, NFList<std::string>>> mxLuaPropertyCallBackFuncMap;
     NFMap<std::string, NFMap<NFGUID, NFList<std::string>>> mxLuaRecordCallBackFuncMap;
     NFMap<int, NFMap<NFGUID, NFList<std::string>>> mxLuaEventCallBackFuncMap;
-    NFMap<std::string, NFMap<NFGUID, NFList<std::string>>> mxLuaHeartBeatCallBackFuncMap;
+    NFMap<std::string, NFMap<NFGUID, NFList<std::string>>> mxJsHeartBeatCallBackFuncMap;
 
     NFMap<std::string, NFList<std::string>> mxClassEventFuncMap;
 
