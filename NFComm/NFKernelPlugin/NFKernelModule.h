@@ -46,9 +46,7 @@
 #include "NFComm/NFPluginModule/NFIThreadPoolModule.h"
 
 
-class NFKernelModule
-    : public NFIKernelModule,
-  public NFMapEx<NFGUID, NFIObject>
+class NFKernelModule : public NFIKernelModule,public NFMapEx<NFGUID, NFIObject>
 {
 public:
     NFKernelModule(NFIPluginManager* p);

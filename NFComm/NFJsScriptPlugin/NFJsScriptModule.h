@@ -99,12 +99,8 @@ public:
 
 
 protected:
-	void RegisterModule(const std::string& tableName, const LuaIntf::LuaRef& luaTable);
 
-	//FOR KERNEL MODULE
-	NFGUID CreateObject(const NFGUID& self, const int sceneID, const int groupID, const std::string& className, const std::string& objectIndex, const NFDataList& arg);
-	bool ExistObject(const NFGUID& self);
-	bool DestroyObject(const NFGUID & self);
+
 
 	//return the group id
 	bool EnterScene(const int sceneID, const int groupID);
@@ -133,22 +129,6 @@ protected:
 	bool AddSchedule(const NFGUID& self, std::string& strHeartBeatName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc, const float time, const int count);
 	bool AddModuleSchedule(std::string& strHeartBeatName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc, const float time, const int count);
 
-	int AddRow(const NFGUID& self, std::string& recordName, const NFDataList& var);
-	bool RemRow(const NFGUID& self, std::string& recordName, const int row);
-
-	bool SetRecordInt(const NFGUID& self, const std::string& recordName, const int row, const std::string& colTag, const NFINT64 value);
-	bool SetRecordFloat(const NFGUID& self, const std::string& recordName, const int row, const std::string& colTag, const double value);
-	bool SetRecordString(const NFGUID& self, const std::string& recordName, const int row, const std::string& colTag, const std::string& value);
-	bool SetRecordObject(const NFGUID& self, const std::string& recordName, const int row, const std::string& colTag, const NFGUID& value);
-	bool SetRecordVector2(const NFGUID& self, const std::string& recordName, const int row, const std::string& colTag, const NFVector2& value);
-	bool SetRecordVector3(const NFGUID& self, const std::string& recordName, const int row, const std::string& colTag, const NFVector3& value);
-
-	NFINT64 GetRecordInt(const NFGUID& self, const std::string& recordName, const int row, const std::string& colTag);
-	double GetRecordFloat(const NFGUID& self, const std::string& recordName, const int row, const std::string& colTag);
-	std::string GetRecordString(const NFGUID& self, const std::string& recordName, const int row, const std::string& colTag);
-	NFGUID GetRecordObject(const NFGUID& self, const std::string& recordName, const int row, const std::string& colTag);
-	NFVector2 GetRecordVector2(const NFGUID& self, const std::string& recordName, const int row, const std::string& colTag);
-	NFVector3 GetRecordVector3(const NFGUID& self, const std::string& recordName, const int row, const std::string& colTag);
 
 	NFINT64 GetNowTime();
 	NFGUID CreateId();
@@ -159,11 +139,6 @@ protected:
 	bool ExistElementObject(const std::string& configName);
 	std::vector<std::string> GetEleList(const std::string& className);
 
-	NFINT64 GetElePropertyInt(const std::string& configName, const std::string& propertyName);
-	double GetElePropertyFloat(const std::string& configName, const std::string& propertyName);
-	std::string GetElePropertyString(const std::string& configName, const std::string& propertyName);
-	NFVector2 GetElePropertyVector2(const std::string& configName, const std::string& propertyName);
-	NFVector3 GetElePropertyVector3(const std::string& configName, const std::string& propertyName);
 
 	//FOR NET MODULE
 	//as server
@@ -208,7 +183,7 @@ protected:
 
     int OnLuaPropertyCB(const NFGUID& self, const std::string& propertyName, const NFData& oldVar, const NFData& newVar, const NFINT64 reason);
     int OnLuaRecordCB(const NFGUID& self, const RECORD_EVENT_DATA& eventData, const NFData& oldVar, const NFData& newVar);
-    int OnLuaHeartBeatCB(const NFGUID& self, const std::string& strHeartBeatName, const float time, const int count);
+    int OnTimeOutHeartBeatCB(const NFGUID& self, const std::string& strHeartBeatName, const float time, const int count);
 
     int OnLuaEventCB(const NFGUID& self, const int eventID, const NFDataList& argVar);
 
@@ -220,11 +195,6 @@ protected:
 	void OnNetMsgCallBackAsClientForMasterServer(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len);
 	void OnNetMsgCallBackAsClientForWorldServer(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len);
 	void OnNetMsgCallBackAsClientForGameServer(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len);
-
-protected:
-    bool Register();
-	std::string FindFuncName(const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
-
 
 protected:
     NFIElementModule* m_pElementModule;
@@ -240,9 +210,7 @@ protected:
 protected:
     int64_t mnTime;
     std::string strVersionCode;
-    LuaIntf::LuaContext mLuaContext;
 
-	std::map<std::string, LuaIntf::LuaRef> mxTableName;
 
     NFMap<std::string, NFMap<NFGUID, NFList<std::string>>> mxLuaPropertyCallBackFuncMap;
     NFMap<std::string, NFMap<NFGUID, NFList<std::string>>> mxLuaRecordCallBackFuncMap;
@@ -392,8 +360,14 @@ private:
         v8::Global<v8::Context> DefaultContext;
         v8::Global<v8::Function> DefaultFunction;
         std::function<void(v8::Isolate*,v8::TryCatch*)> exceptionHandler;
+        std::function<void(NFGUID*)> DelegateHandleCleaner;
+        bool FunctionContinue;
+        bool IsCalling;
+
+        TickDelegateInfo(){
+        }
     };
-    std::map<std::string,TickDelegateInfo> TickerDelegateMap;
+    std::map<NFGUID*,TickDelegateInfo*> TickerDelegateHandleMap;
 
     v8::UniquePersistent<v8::FunctionTemplate> DelegateTemplate;
 
@@ -403,10 +377,6 @@ private:
 
 
     bool ExtensionMethodsMapInited = false;
-
-    std::map<FDelegateHandle*, FTickerDelegateWrapper*> TickerDelegateHandleMap;
-
-    FDelegateHandle DelegateProxiesCheckerHandler;
 
     V8Inspector* Inspector;
 

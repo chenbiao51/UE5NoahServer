@@ -33,11 +33,19 @@
 #include "Dependencies/puerts/include/Binding.hpp" 
 #include "Dependencies/puerts/include/CppObjectMapper.h"
 
-#define TRY_RUN_GLOBAL_SCRIPT_FUN0(strFuncName)   try {LuaIntf::LuaRef func(mLuaContext, strFuncName);  func.call<LuaIntf::LuaRef>(); }   catch (LuaIntf::LuaException& e) { cout << e.what() << endl; }
-#define TRY_RUN_GLOBAL_SCRIPT_FUN1(strFuncName, arg1)  try {LuaIntf::LuaRef func(mLuaContext, strFuncName);  func.call<LuaIntf::LuaRef>(arg1); }catch (LuaIntf::LuaException& e) { cout << e.what() << endl; }
-#define TRY_RUN_GLOBAL_SCRIPT_FUN2(strFuncName, arg1, arg2)  try {LuaIntf::LuaRef func(mLuaContext, strFuncName);  func.call<LuaIntf::LuaRef>(arg1, arg2); }catch (LuaIntf::LuaException& e) { cout << e.what() << endl; }
+class JSError
+{
+public:
+    std::string Message;
 
-#define TRY_LOAD_SCRIPT_FLE(fileName)  try{mLuaContext.doFile(fileName);} catch (LuaIntf::LuaException& e) { cout << e.what() << endl; }
+    JSError()
+    {
+    }
+    explicit JSError(const std::string& m):Message(m)
+    {
+    }
+}
+
 
 bool NFJsScriptModule::Awake()
 {
@@ -54,8 +62,6 @@ bool NFJsScriptModule::Awake()
 
 	
 
-    Register();
-
 	std::string strRootFile = pPluginManager->GetConfigPath() + "NFDataCfg/ScriptModule/NFScriptSystem.lua";
 
 	
@@ -65,28 +71,22 @@ bool NFJsScriptModule::Awake()
 
 bool NFJsScriptModule::Init()
 {
-    
-
     return true;
 }
 
 bool NFJsScriptModule::AfterInit()
 {
-	
-
     return true;
 }
 
 bool NFJsScriptModule::Shut()
 {
 	TRY_RUN_GLOBAL_SCRIPT_FUN0("module_shut");
-
     return true;
 }
 
 bool NFJsScriptModule::ReadyExecute()
 {
-	
 	return true;
 }
 
@@ -104,37 +104,10 @@ bool NFJsScriptModule::Execute()
 
 bool NFJsScriptModule::BeforeShut()
 {
-    
-
     return true;
 }
 
-void NFJsScriptModule::RegisterModule(const std::string & tableName, const LuaIntf::LuaRef & luaTable)
-{
-	mxTableName[tableName] = luaTable;
-}
 
-NFGUID NFJsScriptModule::CreateObject(const NFGUID & self, const int sceneID, const int groupID, const std::string & className, const std::string & objectIndex, const NFDataList & arg)
-{
-	NF_SHARE_PTR<NFIObject> xObject = m_pKernelModule->CreateObject(self, sceneID, groupID, className, objectIndex, arg);
-	if (xObject)
-	{
-		return xObject->Self();
-
-	}
-
-	return NFGUID();
-}
-
-bool NFJsScriptModule::ExistObject(const NFGUID & self)
-{
-	return m_pKernelModule->ExistObject(self);
-}
-
-bool NFJsScriptModule::DestroyObject(const NFGUID & self)
-{
-	return m_pKernelModule->DestroyObject(self);
-}
 
 bool NFJsScriptModule::EnterScene(const int sceneID, const int groupID)
 {
@@ -153,70 +126,7 @@ bool NFJsScriptModule::FindProperty(const NFGUID & self, const std::string & pro
 	return m_pKernelModule->FindProperty(self, propertyName);
 }
 
-bool NFJsScriptModule::SetPropertyInt(const NFGUID & self, const std::string & propertyName, const NFINT64 propValue)
-{
-	return m_pKernelModule->SetPropertyInt(self, propertyName, propValue);
-}
 
-bool NFJsScriptModule::SetPropertyFloat(const NFGUID & self, const std::string & propertyName, const double propValue)
-{
-	return m_pKernelModule->SetPropertyFloat(self, propertyName, propValue);
-}
-
-bool NFJsScriptModule::SetPropertyString(const NFGUID & self, const std::string & propertyName, const std::string & propValue)
-{
-	return m_pKernelModule->SetPropertyString(self, propertyName, propValue);
-}
-
-bool NFJsScriptModule::SetPropertyObject(const NFGUID & self, const std::string & propertyName, const NFGUID & propValue)
-{
-	return m_pKernelModule->SetPropertyObject(self, propertyName, propValue);
-}
-
-bool NFJsScriptModule::SetPropertyVector2(const NFGUID & self, const std::string & propertyName, const NFVector2 & propValue)
-{
-	return m_pKernelModule->SetPropertyVector2(self, propertyName, propValue);
-}
-
-bool NFJsScriptModule::SetPropertyVector3(const NFGUID & self, const std::string & propertyName, const NFVector3 & propValue)
-{
-	return m_pKernelModule->SetPropertyVector3(self, propertyName, propValue);
-}
-
-NFINT64 NFJsScriptModule::GetPropertyInt(const NFGUID & self, const std::string & propertyName)
-{
-	return m_pKernelModule->GetPropertyInt(self, propertyName);
-}
-
-int NFJsScriptModule::GetPropertyInt32(const NFGUID & self, const std::string & propertyName)
-{
-	return m_pKernelModule->GetPropertyInt32(self, propertyName);
-}
-
-double NFJsScriptModule::GetPropertyFloat(const NFGUID & self, const std::string & propertyName)
-{
-	return m_pKernelModule->GetPropertyFloat(self, propertyName);
-}
-
-std::string NFJsScriptModule::GetPropertyString(const NFGUID & self, const std::string & propertyName)
-{
-	return m_pKernelModule->GetPropertyString(self, propertyName);
-}
-
-NFGUID NFJsScriptModule::GetPropertyObject(const NFGUID & self, const std::string & propertyName)
-{
-	return m_pKernelModule->GetPropertyObject(self, propertyName);
-}
-
-NFVector2 NFJsScriptModule::GetPropertyVector2(const NFGUID & self, const std::string & propertyName)
-{
-	return m_pKernelModule->GetPropertyVector2(self, propertyName);
-}
-
-NFVector3 NFJsScriptModule::GetPropertyVector3(const NFGUID & self, const std::string & propertyName)
-{
-	return m_pKernelModule->GetPropertyVector3(self, propertyName);
-}
 
 bool NFJsScriptModule::AddClassCallBack(std::string& className, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc)
 {
@@ -274,46 +184,6 @@ int NFJsScriptModule::OnClassEventCB(const NFGUID& objectId, const std::string& 
 	return -1;
 }
 
-void NFJsScriptModule::OnScriptReload()
-{
-    NFINT64 nAppType = APPType();
-    std::string strRootFile = "";
-    switch ((NF_SERVER_TYPES)(nAppType))
-    {
-        case NF_SERVER_TYPES::NF_ST_GAME:
-        {
-			strRootFile = pPluginManager->GetConfigPath() + "NFDataCfg/ScriptModule/game/game_script_reload.lua";
-        }
-        break;
-        case NF_SERVER_TYPES::NF_ST_LOGIN:
-        {
-			strRootFile = pPluginManager->GetConfigPath() + "NFDataCfg/ScriptModule/login/login_script_reload.lua";
-        }
-        break;
-        case NF_SERVER_TYPES::NF_ST_WORLD:
-        {
-			strRootFile = pPluginManager->GetConfigPath() + "NFDataCfg/ScriptModule/world/world_script_reload.lua";
-        }
-        break;
-        case NF_SERVER_TYPES::NF_ST_PROXY:
-        {
-			strRootFile = pPluginManager->GetConfigPath() + "NFDataCfg/ScriptModule/proxy/proxy_script_reload.lua";
-        }
-        break;
-        case NF_SERVER_TYPES::NF_ST_MASTER:
-        {
-			strRootFile = pPluginManager->GetConfigPath() + "NFDataCfg/ScriptModule/master/master_script_reload.lua";
-        }
-        break;
-        default:
-        break;
-    }
-    
-    if (!strRootFile.empty())
-    {
-		TRY_LOAD_SCRIPT_FLE(strRootFile.c_str());
-    }
-}
 
 bool NFJsScriptModule::AddPropertyCallBack(const NFGUID& self, std::string& propertyName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc)
 {
@@ -492,7 +362,7 @@ bool NFJsScriptModule::AddSchedule(const NFGUID& self, std::string& strHeartBeat
 	return false;
 }
 
-int NFJsScriptModule::OnLuaHeartBeatCB(const NFGUID& self, const std::string& strHeartBeatName, const float time, const int count)
+int NFJsScriptModule::OnTimeOutHeartBeatCB(const NFGUID& self, const std::string& strHeartBeatName, const float time, const int count)
 {
 
 	auto funcList = mxLuaHeartBeatCallBackFuncMap.GetElement(strHeartBeatName);
@@ -533,87 +403,8 @@ int NFJsScriptModule::OnLuaHeartBeatCB(const NFGUID& self, const std::string& st
     return 0;
 }
 
-int NFJsScriptModule::AddRow(const NFGUID& self, std::string& recordName, const NFDataList& var)
-{
-    NF_SHARE_PTR<NFIRecord> pRecord = m_pKernelModule->FindRecord(self, recordName);
-    if (nullptr == pRecord)
-    {
-        return -1;
-    }
 
-    return pRecord->AddRow(-1, var);
-}
 
-bool NFJsScriptModule::RemRow(const NFGUID & self, std::string & recordName, const int row)
-{
-    NF_SHARE_PTR<NFIRecord> pRecord = m_pKernelModule->FindRecord(self, recordName);
-    if (nullptr == pRecord)
-    {
-        return false;
-    }
-
-    return pRecord->Remove(row);
-}
-
-bool NFJsScriptModule::SetRecordInt(const NFGUID & self, const std::string & recordName, const int row, const std::string & colTag, const NFINT64 value)
-{
-	return m_pKernelModule->SetRecordInt(self, recordName, row, colTag, value);
-}
-
-bool NFJsScriptModule::SetRecordFloat(const NFGUID & self, const std::string & recordName, const int row, const std::string & colTag, const double value)
-{
-	return m_pKernelModule->SetRecordFloat(self, recordName, row, colTag, value);
-}
-
-bool NFJsScriptModule::SetRecordString(const NFGUID & self, const std::string & recordName, const int row, const std::string & colTag, const std::string & value)
-{
-	return m_pKernelModule->SetRecordString(self, recordName, row, colTag, value);
-}
-
-bool NFJsScriptModule::SetRecordObject(const NFGUID & self, const std::string & recordName, const int row, const std::string & colTag, const NFGUID & value)
-{
-	return m_pKernelModule->SetRecordObject(self, recordName, row, colTag, value);
-}
-
-bool NFJsScriptModule::SetRecordVector2(const NFGUID & self, const std::string & recordName, const int row, const std::string & colTag, const NFVector2 & value)
-{
-	return m_pKernelModule->SetRecordVector2(self, recordName, row, colTag, value);
-}
-
-bool NFJsScriptModule::SetRecordVector3(const NFGUID & self, const std::string & recordName, const int row, const std::string & colTag, const NFVector3 & value)
-{
-	return m_pKernelModule->SetRecordVector3(self, recordName, row, colTag, value);
-}
-
-NFINT64 NFJsScriptModule::GetRecordInt(const NFGUID & self, const std::string & recordName, const int row, const std::string & colTag)
-{
-	return m_pKernelModule->GetRecordInt(self, recordName, row, colTag);
-}
-
-double NFJsScriptModule::GetRecordFloat(const NFGUID & self, const std::string & recordName, const int row, const std::string & colTag)
-{
-	return m_pKernelModule->GetRecordFloat(self, recordName, row, colTag);
-}
-
-std::string NFJsScriptModule::GetRecordString(const NFGUID & self, const std::string & recordName, const int row, const std::string & colTag)
-{
-	return m_pKernelModule->GetRecordString(self, recordName, row, colTag);
-}
-
-NFGUID NFJsScriptModule::GetRecordObject(const NFGUID & self, const std::string & recordName, const int row, const std::string & colTag)
-{
-	return m_pKernelModule->GetRecordObject(self, recordName, row, colTag);
-}
-
-NFVector2 NFJsScriptModule::GetRecordVector2(const NFGUID & self, const std::string & recordName, const int row, const std::string & colTag)
-{
-	return m_pKernelModule->GetRecordVector2(self, recordName, row, colTag);
-}
-
-NFVector3 NFJsScriptModule::GetRecordVector3(const NFGUID & self, const std::string & recordName, const int row, const std::string & colTag)
-{
-	return m_pKernelModule->GetRecordVector3(self, recordName, row, colTag);
-}
 
 NFINT64 NFJsScriptModule::GetNowTime()
 {
@@ -1116,8 +907,10 @@ void NFJsScriptModule::OnNetMsgCallBackAsClientForGameServer(const NFSOCK sockIn
 	}
 }
 
-NFJsScriptModule::NFJsScriptModule(const std::string& NFDataCfgPath,const std::string& ScriptRoot): 
-                  NFJsScriptModule( std::make_shared<DefaultJSModuleLoader>(NFDataCfgPath,ScriptRoot), std::make_shared<NFLogModule>(), -1, nullptr, nullptr, nullptr){}
+NFJsScriptModule::NFJsScriptModule(const std::string& NFDataCfgPath,const std::string& ScriptRoot): NFJsScriptModule( std::make_shared<DefaultJSModuleLoader>(NFDataCfgPath,ScriptRoot), std::make_shared<NFLogModule>(), -1, nullptr, nullptr, nullptr)
+{
+
+}
 
 static void ToCString(const v8::FunctionCallbackInfo<v8::Value>& Info)
 {
@@ -1331,9 +1124,6 @@ NFJsScriptModule::~NFJsScriptModule()
     Require.Reset();
     ReloadJs.Reset();
     JsPromiseRejectCallback.Reset();
-
-    FTicker::GetCoreTicker().RemoveTicker(DelegateProxiesCheckerHandler);
-
     {
         auto Isolate = MainIsolate;
 #ifdef THREAD_SAFE
@@ -1824,35 +1614,34 @@ void NFJsScriptModule::SetFTickerDelegate(const v8::FunctionCallbackInfo<v8::Val
 {
     using std::placeholders::_1;
     using std::placeholders::_2;
-    std::function<void(const JSError*, std::shared_ptr<ILogger>&)> ExceptionLog =
-        [](const JSError* Exception, std::shared_ptr<ILogger>& InLogger)
+    std::function<void(const JSError*, std::shared_ptr<NFILogModule>&)> ExceptionLog =[](const JSError* Exception, std::shared_ptr<NFILogModule>& InLogger)
     {
-        FString Message = FString::Printf("JS Execution Exception: %s", *(Exception->Message));
-        InLogger->Warn(Message);
+        InLogger->Warn("JS Execution Exception: "+*(Exception->Message));
     };
     std::function<void(const JSError*)> ExceptionLogWrapper = std::bind(ExceptionLog, _1, Logger);
     std::function<void(v8::Isolate*, v8::TryCatch*)> ExecutionExceptionHandler =
-        std::bind(&FJsEnvImpl::ReportExecutionException, this, _1, _2, ExceptionLogWrapper);
-    std::function<void(FDelegateHandle*)> DelegateHandleCleaner = std::bind(&FJsEnvImpl::RemoveFTickerDelegateHandle, this, _1);
-
-    FTickerDelegateWrapper* DelegateWrapper = new FTickerDelegateWrapper(Continue);
-    DelegateWrapper->Init(Info, ExecutionExceptionHandler, DelegateHandleCleaner);
-
-    FTickerDelegate Delegate = FTickerDelegate::CreateRaw(DelegateWrapper, &FTickerDelegateWrapper::CallFunction);
+    std::bind(&NFJsScriptModule::ReportExecutionException, this, _1, _2, ExceptionLogWrapper);
+    std::function<void(NFGUID*)> DelegateHandleCleaner = std::bind(&NFJsScriptModule::RemoveFTickerDelegateHandle, this, _1);
 
     v8::Isolate* Isolate = Info.GetIsolate();
     v8::Isolate::Scope IsolateScope(Isolate);
     v8::HandleScope HandleScope(Isolate);
     v8::Local<v8::Context> Context = Isolate->GetCurrentContext();
     float Millisecond = Info[1]->NumberValue(Context).ToChecked();
-    float Delay = Millisecond / 1000.f;
+    float Delay = Millisecond;
+    //float Delay = Millisecond / 1000.f;
+    TickDelegateInfo* tickDelegateInfo = new TickDelegateInfo();
+    tickDelegateInfo->FunctionContinue  = Continue;
+    tickDelegateInfo->exceptionHandler = ExecutionExceptionHandler;
+    tickDelegateInfo->DelegateHandleCleaner = DelegateHandleCleaner;
+
+    NFGUID* tdhandle = new NFGUID();
+    m_pScheduleModule->AddSchedule(tdhandle, "JsTimeOutTick", this, &NFJsScriptModule::OnTimeOutHeartBeatCB, Delay, count);
 
     // TODO - 如果实现多线程，这里应该加锁阻止定时回调的执行，直到DelegateWrapper设置好handle
-    FDelegateHandle* DelegateHandle = new FDelegateHandle(FTicker::GetCoreTicker().AddTicker(Delegate, Delay));
-    DelegateWrapper->SetDelegateHandle(DelegateHandle);
-    TickerDelegateHandleMap[DelegateHandle] = DelegateWrapper;
+    TickerDelegateHandleMap[tdhandle] = tickDelegateInfo;
 
-    Info.GetReturnValue().Set(v8::External::New(Info.GetIsolate(), DelegateHandle));
+    Info.GetReturnValue().Set(v8::External::New(Info.GetIsolate(), tdhandle));
 }
 
 void NFJsScriptModule::ReportExecutionException(v8::Isolate* Isolate, v8::TryCatch* TryCatch, std::function<void(const JSError*)> CompletionHandler)
@@ -1864,7 +1653,7 @@ void NFJsScriptModule::ReportExecutionException(v8::Isolate* Isolate, v8::TryCat
     }
 }
 
-void NFJsScriptModule::RemoveFTickerDelegateHandle(FDelegateHandle* Handle)
+void NFJsScriptModule::RemoveFTickerDelegateHandle(NFGUID* Handle)
 {
     // TODO - 如果实现多线程，FTicker所在主线程和当前线程释放handle可能有竞争
     auto Iterator = std::find_if(TickerDelegateHandleMap.begin(), TickerDelegateHandleMap.end(), [&](auto& Pair) { return Pair.first == Handle; });
@@ -1876,7 +1665,7 @@ void NFJsScriptModule::RemoveFTickerDelegateHandle(FDelegateHandle* Handle)
             Iterator->second->FunctionContinue = false;
             return;
         }
-        FTicker::GetCoreTicker().RemoveTicker(*(Iterator->first));
+        m_pScheduleModule->RemoveSchedule(Handle);
         delete Iterator->first;
         delete Iterator->second;
         TickerDelegateHandleMap.erase(Iterator);
@@ -1905,7 +1694,7 @@ void NFJsScriptModule::ClearInterval(const v8::FunctionCallbackInfo<v8::Value>& 
     {
         CHECK_V8_ARGS(EArgExternal);
         v8::Local<v8::External> Arg = v8::Local<v8::External>::Cast(Info[0]);
-        FDelegateHandle* Handle = static_cast<FDelegateHandle*>(Arg->Value());
+        NFGUID* Handle = static_cast<NFGUID*>(Arg->Value());
         RemoveFTickerDelegateHandle(Handle);
     }
 }

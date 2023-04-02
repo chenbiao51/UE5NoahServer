@@ -528,8 +528,7 @@ NF_SHARE_PTR<NFIObject> NFKernelModule::CreateObject(const NFGUID& self, const i
 
 bool NFKernelModule::DestroyObject(const NFGUID& self)
 {
-	if (self == mnCurExeObject
-		&& !self.IsNull())
+	if (self == mnCurExeObject && !self.IsNull())
 	{
 
 		return DestroySelf(self);
