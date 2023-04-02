@@ -36,19 +36,14 @@
 #include <iostream>
 #include <vector>
 #include <thread>
-#include "JsEnv.h"
-#include "DynamicDelegateProxy.h"
-#include "StructWrapper.h"
 #include "CppObjectMapper.h"
 #include "V8Utils.h"
-
+#include "JSModuleLoader.h"
 #include "ObjectMapper.h"
 #include "NFILogModule.h"
-#include "TickerDelegateWrapper.h"
-#include "ContainerMeta.h"
 #include "ObjectCacheNode.h"
 #include <unordered_map>
-
+#include "PromiseRejectCallback.hpp"
 
 
 #pragma warning(push, 0)
@@ -73,13 +68,30 @@
 #include "NFComm/NFPluginModule/NFILogModule.h"
 #include "NFJsPBModule.h"
 
+namespace puerts
+{
+
+class JSError
+{
+public:
+    std::string Message;
+
+    JSError()
+    {
+    }
+    explicit JSError(const std::string& m):Message(m)
+    {
+    }
+};
+
+
 class NFIJsScriptModule : public NFIModule
 {
 public:
 
 };
 
-class NFJsScriptModule : public NFIJsScriptModule,ICppObjectMapper
+class NFJsScriptModule : public NFIJsScriptModule,puerts::ICppObjectMapper
 {
 public:
     NFJsScriptModule(NFIPluginManager* p)
@@ -227,7 +239,7 @@ protected:
 public:
     explicit NFJsScriptModule(const std::string& NFDataCfgPath ,const std::string& ScriptRoot);
 
-    NFJsScriptModule(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::shared_ptr<NFILogModule> InLogger, int InPort,  std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime = nullptr, void* InExternalContext = nullptr);
+    NFJsScriptModule(std::shared_ptr<puerts::IJSModuleLoader> InModuleLoader, std::shared_ptr<NFILogModule> InLogger, int InPort,  std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime = nullptr, void* InExternalContext = nullptr);
 
     virtual ~NFJsScriptModule() override;
 
@@ -266,7 +278,7 @@ public:
 
     void JsHotReload(std::string ModuleName, const std::string& JsSource);
 
-    virtual void ReloadModule(std::string ModuleName, const std::string& JsSource) override;
+    void ReloadModule(std::string ModuleName, const std::string& JsSource) override;
 
     virtual void ReloadSource(const std::string& Path, const std::string& JsSource) override;
 
@@ -288,7 +300,7 @@ public:
 
     V8_INLINE static NFJsScriptModule* Get(v8::Isolate* Isolate)
     {
-        return static_cast<NFJsScriptModule*>(FV8Utils::IsolateData<ICppObjectMapper>(Isolate));
+        return static_cast<NFJsScriptModule*>(puerts::FV8Utils::IsolateData<ICppObjectMapper>(Isolate));
     }
 
 public:
@@ -314,7 +326,7 @@ private:
 
     void ReportExecutionException( v8::Isolate* Isolate, v8::TryCatch* TryCatch, std::function<void(const JSError*)> CompletionHandler);
 
-    void RemoveFTickerDelegateHandle(FDelegateHandle* Handle);
+    void RemoveFTickerDelegateHandle(NFGUID* Handle);
 
     void SetInterval(const v8::FunctionCallbackInfo<v8::Value>& Info);
 
@@ -331,7 +343,7 @@ public:
 
 private:
 
-    std::shared_ptr<IJSModuleLoader> ModuleLoader;
+    std::shared_ptr<puerts::IJSModuleLoader> ModuleLoader;
 
     
     bool Started;
@@ -352,7 +364,7 @@ private:
 
     v8::Global<v8::Function> ReloadJs;
 
-    FCppObjectMapper CppObjectMapper;
+    puerts::FCppObjectMapper CppObjectMapper;
     
     struct  TickDelegateInfo
     {
@@ -386,7 +398,7 @@ private:
 
     v8::Global<v8::Map> ManualReleaseCallbackMap;
 
-    typedef void (FJsEnvImpl::*V8MethodCallback)(const v8::FunctionCallbackInfo<v8::Value>& Info);
+    typedef void (NFJsScriptModule::*V8MethodCallback)(const v8::FunctionCallbackInfo<v8::Value>& Info);
 
     template <V8MethodCallback callback>
     struct MethodBindingHelper
@@ -409,4 +421,6 @@ private:
     };
 };
 
+}
 #endif
+

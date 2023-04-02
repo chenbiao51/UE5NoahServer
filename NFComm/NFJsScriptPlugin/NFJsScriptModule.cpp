@@ -27,24 +27,18 @@
 #include <iostream>
 #include <string>
 #include <assert.h>
+#include <filesystem>
 #include "NFJsScriptModule.h"
 #include "NFJsScriptPlugin.h"
 #include "NFComm/NFPluginModule/NFIKernelModule.h"
 #include "Dependencies/puerts/include/Binding.hpp" 
 #include "Dependencies/puerts/include/CppObjectMapper.h"
 
-class JSError
-{
-public:
-    std::string Message;
+namespace fs = std::filesystem;
 
-    JSError()
-    {
-    }
-    explicit JSError(const std::string& m):Message(m)
-    {
-    }
-}
+namespace puerts
+{
+
 
 
 bool NFJsScriptModule::Awake()
@@ -81,7 +75,7 @@ bool NFJsScriptModule::AfterInit()
 
 bool NFJsScriptModule::Shut()
 {
-	TRY_RUN_GLOBAL_SCRIPT_FUN0("module_shut");
+	
     return true;
 }
 
@@ -459,105 +453,6 @@ std::vector<std::string> NFJsScriptModule::GetEleList(const std::string& classNa
     return std::vector<std::string>();
 }
 
-NFINT64 NFJsScriptModule::GetElePropertyInt(const std::string & configName, const std::string & propertyName)
-{
-	return m_pElementModule->GetPropertyInt(configName, propertyName);
-}
-
-double NFJsScriptModule::GetElePropertyFloat(const std::string & configName, const std::string & propertyName)
-{
-	return m_pElementModule->GetPropertyFloat(configName, propertyName);
-}
-
-std::string NFJsScriptModule::GetElePropertyString(const std::string & configName, const std::string & propertyName)
-{
-	return m_pElementModule->GetPropertyString(configName, propertyName);
-}
-
-NFVector2 NFJsScriptModule::GetElePropertyVector2(const std::string & configName, const std::string & propertyName)
-{
-	return m_pElementModule->GetPropertyVector2(configName, propertyName);
-}
-
-NFVector3 NFJsScriptModule::GetElePropertyVector3(const std::string & configName, const std::string & propertyName)
-{
-	return m_pElementModule->GetPropertyVector3(configName, propertyName);
-}
-
-template<typename T>
-bool NFJsScriptModule::AddLuaFuncToMap(NFMap<T, NFMap<NFGUID, NFList<string>>>& funcMap, const NFGUID& self, T key, string& luaFunc)
-{
-    auto funcList = funcMap.GetElement(key);
-    if (!funcList)
-    {
-        NFList<string>* funcNameList = new NFList<string>;
-        funcNameList->Add(luaFunc);
-        funcList = new NFMap<NFGUID, NFList<string>>;
-        funcList->AddElement(self, funcNameList);
-        funcMap.AddElement(key, funcList);
-        return true;
-    }
-
-    if (!funcList->GetElement(self))
-    {
-        NFList<string>* funcNameList = new NFList<string>;
-        funcNameList->Add(luaFunc);
-        funcList->AddElement(self, funcNameList);
-        return true;
-    }
-    else
-    {
-        auto funcNameList = funcList->GetElement(self);
-        if (!funcNameList->Find(luaFunc))
-        {
-            funcNameList->Add(luaFunc);
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-}
-
-
-template<typename T>
-bool NFJsScriptModule::AddLuaFuncToMap(NFMap<T, NFMap<NFGUID, NFList<string>>>& funcMap, T key, string& luaFunc)
-{
-    auto funcList = funcMap.GetElement(key);
-    if (!funcList)
-    {
-        NFList<string>* funcNameList = new NFList<string>;
-        funcNameList->Add(luaFunc);
-        funcList = new NFMap<NFGUID, NFList<string>>;
-        funcList->AddElement(NFGUID(), funcNameList);
-        funcMap.AddElement(key, funcList);
-        return true;
-    }
-
-    if (!funcList->GetElement(NFGUID()))
-    {
-        NFList<string>* funcNameList = new NFList<string>;
-        funcNameList->Add(luaFunc);
-        funcList->AddElement(NFGUID(), funcNameList);
-        return true;
-    }
-    else
-    {
-        auto funcNameList = funcList->GetElement(NFGUID());
-        if (!funcNameList->Find(luaFunc))
-        {
-            funcNameList->Add(luaFunc);
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-}
 
 void NFJsScriptModule::RemoveCallBackAsServer(const int msgID)
 {
@@ -1000,7 +895,7 @@ NFJsScriptModule::NFJsScriptModule(std::shared_ptr<IJSModuleLoader> InModuleLoad
     std::unique_ptr<CommonEnvironmentSetup> setup = CommonEnvironmentSetup::Create(platform.get(), &errors, Args, ExecArgs);
     if (!setup) {
         for (const std::string& err : errors)
-        fprintf(stderr, "%s: %s\n", args[0].c_str(), err.c_str());
+        fprintf(stderr, "%s: %s\n", Args[0].c_str(), err.c_str());
         return ;
     }
 
@@ -1008,12 +903,12 @@ NFJsScriptModule::NFJsScriptModule(std::shared_ptr<IJSModuleLoader> InModuleLoad
     NodeEnv = setup->env();
 
         
-    Locker locker(isolate);
-    v8::Isolate::Scope isolate_scope(isolate);
-    v8::HandleScope handle_scope(isolate);
+    v8::Locker locker(MainIsolate);
+    v8::Isolate::Scope isolate_scope(MainIsolate);
+    v8::HandleScope handle_scope(MainIsolate);
     v8::Context::Scope context_scope(setup->context());
 
-    MaybeLocal<Value> LoadenvRet = node::LoadEnvironment(
+    v8::MaybeLocal<v8::Value> LoadenvRet = node::LoadEnvironment(
                 NodeEnv,
                 "const publicRequire = require('module').createRequire(process.cwd() + '/');"
                 "globalThis.require = publicRequire;"
@@ -1053,32 +948,32 @@ exit_code = node::SpinEventLoop(NodeEnv).FromMaybe(1);
 
     auto This = v8::External::New(Isolate, this);
 
-    MethodBindingHelper<&FJsEnvImpl::EvalScript>::Bind(Isolate, Context, Global, "__tgjsEvalScript", This);
+    MethodBindingHelper<&NFJsScriptModule::EvalScript>::Bind(Isolate, Context, Global, "__tgjsEvalScript", This);
 
-    MethodBindingHelper<&FJsEnvImpl::Log>::Bind(Isolate, Context, Global, "__tgjsLog", This);
+    MethodBindingHelper<&NFJsScriptModule::Log>::Bind(Isolate, Context, Global, "__tgjsLog", This);
 
-    MethodBindingHelper<&FJsEnvImpl::SearchModule>::Bind(Isolate, Context, Global, "__tgjsSearchModule", This);
+    MethodBindingHelper<&NFJsScriptModule::SearchModule>::Bind(Isolate, Context, Global, "__tgjsSearchModule", This);
 
-    MethodBindingHelper<&FJsEnvImpl::LoadModule>::Bind(Isolate, Context, Global, "__tgjsLoadModule", This);
+    MethodBindingHelper<&NFJsScriptModule::LoadModule>::Bind(Isolate, Context, Global, "__tgjsLoadModule", This);
 
-    MethodBindingHelper<&FJsEnvImpl::LoadCppType>::Bind(Isolate, Context, Global, "__tgjsLoadCDataType", This);
+    MethodBindingHelper<&NFJsScriptModule::LoadCppType>::Bind(Isolate, Context, Global, "__tgjsLoadCDataType", This);
 
-    MethodBindingHelper<&FJsEnvImpl::FindModule>::Bind(Isolate, Context, Global, "__tgjsFindModule", This);
+    MethodBindingHelper<&NFJsScriptModule::FindModule>::Bind(Isolate, Context, Global, "__tgjsFindModule", This);
 
-    MethodBindingHelper<&FJsEnvImpl::SetInspectorCallback>::Bind(Isolate, Context, Global, "__tgjsSetInspectorCallback", This);
+    MethodBindingHelper<&NFJsScriptModule::SetInspectorCallback>::Bind(Isolate, Context, Global, "__tgjsSetInspectorCallback", This);
 
-    MethodBindingHelper<&FJsEnvImpl::DispatchProtocolMessage>::Bind( Isolate, Context, Global, "__tgjsDispatchProtocolMessage", This);
+    MethodBindingHelper<&NFJsScriptModule::DispatchProtocolMessage>::Bind( Isolate, Context, Global, "__tgjsDispatchProtocolMessage", This);
 
-    Isolate->SetPromiseRejectCallback(&PromiseRejectCallback<FJsEnvImpl>);
-    Global->Set(Context, FV8Utils::ToV8String(Isolate, "__tgjsSetPromiseRejectCallback"),v8::FunctionTemplate::New(Isolate, &SetPromiseRejectCallback<FJsEnvImpl>)->GetFunction(Context).ToLocalChecked()).Check();
+    Isolate->SetPromiseRejectCallback(&PromiseRejectCallback<NFJsScriptModule>);
+    Global->Set(Context, FV8Utils::ToV8String(Isolate, "__tgjsSetPromiseRejectCallback"),v8::FunctionTemplate::New(Isolate, &SetPromiseRejectCallback<NFJsScriptModule>)->GetFunction(Context).ToLocalChecked()).Check();
 
-    MethodBindingHelper<&FJsEnvImpl::SetTimeout>::Bind(Isolate, Context, Global, "setTimeout", This);
+    MethodBindingHelper<&NFJsScriptModule::SetTimeout>::Bind(Isolate, Context, Global, "setTimeout", This);
 
-    MethodBindingHelper<&FJsEnvImpl::ClearInterval>::Bind(Isolate, Context, Global, "clearTimeout", This);
+    MethodBindingHelper<&NFJsScriptModule::ClearInterval>::Bind(Isolate, Context, Global, "clearTimeout", This);
 
-    MethodBindingHelper<&FJsEnvImpl::SetInterval>::Bind(Isolate, Context, Global, "setInterval", This);
+    MethodBindingHelper<&NFJsScriptModule::SetInterval>::Bind(Isolate, Context, Global, "setInterval", This);
 
-    MethodBindingHelper<&FJsEnvImpl::ClearInterval>::Bind(Isolate, Context, Global, "clearInterval", This);
+    MethodBindingHelper<&NFJsScriptModule::ClearInterval>::Bind(Isolate, Context, Global, "clearInterval", This);
 
     PuertsObj->Set(Context, FV8Utils::ToV8String(Isolate, "toCString"),
                 v8::FunctionTemplate::New(Isolate, ToCString)->GetFunction(Context).ToLocalChecked())
@@ -1088,7 +983,7 @@ exit_code = node::SpinEventLoop(NodeEnv).FromMaybe(1);
                 v8::FunctionTemplate::New(Isolate, ToCPtrArray)->GetFunction(Context).ToLocalChecked())
             .Check();
 
-    MethodBindingHelper<&FJsEnvImpl::ReleaseManualReleaseDelegate>::Bind(Isolate, Context, PuertsObj, "releaseManualReleaseDelegate", This);
+    MethodBindingHelper<&NFJsScriptModule::ReleaseManualReleaseDelegate>::Bind(Isolate, Context, PuertsObj, "releaseManualReleaseDelegate", This);
 
     CppObjectMapper.Initialize(Isolate, Context);
 
@@ -1165,9 +1060,6 @@ NFJsScriptModule::~NFJsScriptModule()
         SoftObjectPtrTemplate.Reset();
         MulticastDelegateTemplate.Reset();
         DelegateTemplate.Reset();
-        MapTemplate.Reset();
-        SetTemplate.Reset();
-        ArrayTemplate.Reset();
     }
 
     DefaultContext.Reset();
@@ -1223,26 +1115,26 @@ void NFJsScriptModule::JsHotReload(std::string ModuleName, const std::string& Js
 
     std::string OutPath, OutDebugPath;
 
-    if (ModuleLoader->Search("", ModuleName.ToString(), OutPath, OutDebugPath))
+    if (ModuleLoader->Search("", ModuleName, OutPath, OutDebugPath))
     {
-        OutPath = FPaths::ConvertRelativePathToFull(OutPath);
-        m_pLogModule->LogInfo("reload js module ["+OutPath+"]");
+        fs::path  FullPath = fs::absolute(OutPath);
+        m_pLogModule->LogInfo("reload js module ["+FullPath.string()+"]");
         v8::TryCatch TryCatch(Isolate);
         v8::Handle<v8::Value> Args[] = {
             FV8Utils::ToV8String(Isolate, ModuleName), 
-            FV8Utils::ToV8String(Isolate, OutPath), 
+            FV8Utils::ToV8String(Isolate, FullPath.string()), 
             FV8Utils::ToV8String(Isolate, JsSource)};
 
         auto MaybeRet = LocalReloadJs->Call(Context, v8::Undefined(Isolate), 3, Args);
 
         if (TryCatch.HasCaught())
         {
-            m_pLogModule->InfoError("reload module exception "+FV8Utils::TryCatchToString(Isolate, &TryCatch));
+            m_pLogModule->LogError("reload module exception "+FV8Utils::TryCatchToString(Isolate, &TryCatch));
         }
     }
     else
     {
-        m_pLogModule->InfoWarn("not find js module ["+ModuleName.ToString()+"]");
+        m_pLogModule->LogWarning("not find js module ["+ModuleName+"]");
         return;
     }
 }
@@ -1268,7 +1160,8 @@ void NFJsScriptModule::ReloadSource(const std::string& Path, const std::string& 
     auto LocalReloadJs = ReloadJs.Get(Isolate);
 
     std::ostringstream stream;
-    stream << "reload js [" << *Path <<"]";
+    std::string copyPath = Path;
+    stream << "reload js [" << copyPath <<"]";
     m_pLogModule->LogInfo(stream);
     v8::TryCatch TryCatch(Isolate);
     v8::Handle<v8::Value> Args[] = {v8::Undefined(Isolate), FV8Utils::ToV8String(Isolate, Path), FV8Utils::ToV8String(Isolate, JsSource.c_str())};
@@ -1278,12 +1171,12 @@ void NFJsScriptModule::ReloadSource(const std::string& Path, const std::string& 
     if (TryCatch.HasCaught())
     {
         std::ostringstream streama;
-        streama << "reload module exception " << FV8Utils::TryCatchToString(Isolate, &TryCatch));
+        streama << "reload module exception " << FV8Utils::TryCatchToString(Isolate, &TryCatch);
         m_pLogModule->LogError(streama);
     }
 }
 
-void NFJsScriptModule::OnSourceLoaded(std::function<void(const FString&)> Callback)
+void NFJsScriptModule::OnSourceLoaded(std::function<void(const std::string&)> Callback)
 {
     OnSourceLoadedCallback = Callback;
 }
@@ -1331,7 +1224,7 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
 
     if (Started)
     {
-        m_pLogModule->Error("Started yet!");
+        m_pLogModule->LogError("Started yet!");
         return;
     }
 
@@ -1348,7 +1241,7 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
 
     if (MaybeTGameTGJS.IsEmpty() || !MaybeTGameTGJS.ToLocalChecked()->IsObject())
     {
-        m_pLogModule->Error("global.puerts not found!");
+        m_pLogModule->LogError("global.puerts not found!");
         return;
     }
 
@@ -1358,7 +1251,7 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
 
     if (MaybeArgv.IsEmpty() || !MaybeArgv.ToLocalChecked()->IsObject())
     {
-        m_pLogModule->Error("global.puerts.argv not found!");
+        m_pLogModule->LogError("global.puerts.argv not found!");
         return;
     }
 
@@ -1368,7 +1261,7 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
 
     if (MaybeArgvAdd.IsEmpty() || !MaybeArgvAdd.ToLocalChecked()->IsFunction())
     {
-        m_pLogModule->Error("global.puerts.argv.add not found!");
+        m_pLogModule->LogError("global.puerts.argv.add not found!");
         return;
     }
 
@@ -1390,13 +1283,13 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
         auto CompiledScript = v8::Script::Compile(Context, Source, &Origin);
         if (CompiledScript.IsEmpty())
         {
-            m_pLogModule->Error(FV8Utils::TryCatchToString(Isolate, &TryCatch));
+            m_pLogModule->LogError(FV8Utils::TryCatchToString(Isolate, &TryCatch));
             return;
         }
         auto ReturnVal = CompiledScript.ToLocalChecked()->Run(Context);
         if (TryCatch.HasCaught())
         {
-            m_pLogModule->Error(FV8Utils::TryCatchToString(Isolate, &TryCatch));
+            m_pLogModule->LogError(FV8Utils::TryCatchToString(Isolate, &TryCatch));
         }
     }
     else
@@ -1406,7 +1299,7 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
         __USE(Require.Get(Isolate)->Call(Context, v8::Undefined(Isolate), 1, Args));
         if (TryCatch.HasCaught())
         {
-            m_pLogModule->Error(FV8Utils::TryCatchToString(Isolate, &TryCatch));
+            m_pLogModule->LogError(FV8Utils::TryCatchToString(Isolate, &TryCatch));
         }
     }
     Started = true;
@@ -1419,7 +1312,7 @@ bool NFJsScriptModule::LoadFile(const std::string& RequiringDir, const std::stri
         if (!ModuleLoader->Load(OutPath, Data))
         {
             std::ostringstream stream;
-            stream <<"can not load ["<< *ModuleName <<"]";
+            stream <<"can not load ["<< ModuleName <<"]";
             ErrInfo = stream.str();
             //m_pLogModule->LogInfo(stream.str());
             return false;
@@ -1428,7 +1321,7 @@ bool NFJsScriptModule::LoadFile(const std::string& RequiringDir, const std::stri
     else
     {
         std::ostringstream stream;
-        stream <<"can not load ["<< *ModuleName <<"]";
+        stream <<"can not load ["<< ModuleName <<"]";
         ErrInfo = stream.str();
         //ErrInfo = stream.str();
         return false;
@@ -1544,7 +1437,7 @@ void NFJsScriptModule::Log(const v8::FunctionCallbackInfo<v8::Value>& Info)
             m_pLogModule->LogInfo(Msg);
             break;
         case 2:
-            m_pLogModule->LogWarn(Msg);
+            m_pLogModule->LogWarning(Msg);
             break;
         case 3:
             m_pLogModule->LogError(Msg);
@@ -1616,9 +1509,9 @@ void NFJsScriptModule::SetFTickerDelegate(const v8::FunctionCallbackInfo<v8::Val
     using std::placeholders::_2;
     std::function<void(const JSError*, std::shared_ptr<NFILogModule>&)> ExceptionLog =[](const JSError* Exception, std::shared_ptr<NFILogModule>& InLogger)
     {
-        InLogger->Warn("JS Execution Exception: "+*(Exception->Message));
+        InLogger->LogWarning("JS Execution Exception: "+((Exception->Message)));
     };
-    std::function<void(const JSError*)> ExceptionLogWrapper = std::bind(ExceptionLog, _1, Logger);
+    std::function<void(const JSError*)> ExceptionLogWrapper = std::bind(ExceptionLog, _1, m_pLogModule);
     std::function<void(v8::Isolate*, v8::TryCatch*)> ExecutionExceptionHandler =
     std::bind(&NFJsScriptModule::ReportExecutionException, this, _1, _2, ExceptionLogWrapper);
     std::function<void(NFGUID*)> DelegateHandleCleaner = std::bind(&NFJsScriptModule::RemoveFTickerDelegateHandle, this, _1);
@@ -1636,7 +1529,7 @@ void NFJsScriptModule::SetFTickerDelegate(const v8::FunctionCallbackInfo<v8::Val
     tickDelegateInfo->DelegateHandleCleaner = DelegateHandleCleaner;
 
     NFGUID* tdhandle = new NFGUID();
-    m_pScheduleModule->AddSchedule(tdhandle, "JsTimeOutTick", this, &NFJsScriptModule::OnTimeOutHeartBeatCB, Delay, count);
+    m_pScheduleModule->AddSchedule(*tdhandle, "JsTimeOutTick", this, &NFJsScriptModule::OnTimeOutHeartBeatCB, Delay, 1);
 
     // TODO - 如果实现多线程，这里应该加锁阻止定时回调的执行，直到DelegateWrapper设置好handle
     TickerDelegateHandleMap[tdhandle] = tickDelegateInfo;
@@ -1665,7 +1558,8 @@ void NFJsScriptModule::RemoveFTickerDelegateHandle(NFGUID* Handle)
             Iterator->second->FunctionContinue = false;
             return;
         }
-        m_pScheduleModule->RemoveSchedule(Handle);
+        m_pScheduleModule->RemoveSchedule(*Handle);
+        //m_pScheduleModule->RemoveSchedule(*Handle,"JsTimeOutTick");
         delete Iterator->first;
         delete Iterator->second;
         TickerDelegateHandleMap.erase(Iterator);
@@ -1683,7 +1577,7 @@ void NFJsScriptModule::ClearInterval(const v8::FunctionCallbackInfo<v8::Value>& 
     // todo - mocha 7.0.1，当reporter为JSON，调用clearTimeout时，可能不传值，或传Null、Undefined过来。暂将其忽略
     if (Info.Length() == 0)
     {
-        m_pLogModule->Warn("Calling ClearInterval with 0 argument.");
+        m_pLogModule->LogWarning("Calling ClearInterval with 0 argument.");
     }
     else if (Info[0]->IsNullOrUndefined())
     {
@@ -1767,7 +1661,7 @@ void NFJsScriptModule::SetInspectorCallback(const v8::FunctionCallbackInfo<v8::V
                 {
                     std::stringstream  ss;
                     ss  <<"inspector callback exception"<<FV8Utils::TryCatchToString(MainIsolate, &TryCatch);
-                    m_pLogModule->Error(ss.str());
+                    m_pLogModule->LogError(ss.str());
                 }
             });
     }
@@ -1789,7 +1683,7 @@ void NFJsScriptModule::DispatchProtocolMessage(const v8::FunctionCallbackInfo<v8
     {
         std::string Message = FV8Utils::ToFString(Isolate, Info[0]);
         // UE_LOG(LogTemp, Warning, TEXT("--> %s"), *Message);
-        InspectorChannel->DispatchProtocolMessage(*Message);
+        InspectorChannel->DispatchProtocolMessage(Message);
     }
 }
 
@@ -1822,6 +1716,7 @@ void NFJsScriptModule::DumpStatisticsLog(const v8::FunctionCallbackInfo<v8::Valu
         << "does_zap_garbage: "<< Statistics.does_zap_garbage() <<"\n"
         << "------------------------\n";
     std::string StatisticsLog = ss.str();
-    m_pLogModule->Info(StatisticsLog);
+    m_pLogModule->LogInfo(StatisticsLog);
 
+}
 }
