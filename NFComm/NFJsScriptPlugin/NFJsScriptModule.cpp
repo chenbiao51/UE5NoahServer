@@ -885,14 +885,14 @@ NFJsScriptModule::NFJsScriptModule(std::shared_ptr<IJSModuleLoader> InModuleLoad
     std::vector<std::string> Errors;
 
   
-    std::unique_ptr<MultiIsolatePlatform> platform =  MultiIsolatePlatform::Create(4);
-    V8::InitializePlatform(platform.get());
-    V8::Initialize();
+    std::unique_ptr<node::MultiIsolatePlatform> platform =  node::MultiIsolatePlatform::Create(4);
+    v8::V8::InitializePlatform(platform.get());
+    v8::V8::Initialize();
 
 
     int exit_code = 0;
     std::vector<std::string> errors;
-    std::unique_ptr<CommonEnvironmentSetup> setup = CommonEnvironmentSetup::Create(platform.get(), &errors, Args, ExecArgs);
+    std::unique_ptr<node::CommonEnvironmentSetup> setup = node::CommonEnvironmentSetup::Create(platform.get(), &errors, Args, ExecArgs);
     if (!setup) {
         for (const std::string& err : errors)
         fprintf(stderr, "%s: %s\n", Args[0].c_str(), err.c_str());
