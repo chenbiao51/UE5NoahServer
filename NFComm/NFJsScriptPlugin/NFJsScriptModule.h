@@ -243,17 +243,17 @@ public:
 
     virtual ~NFJsScriptModule() override;
 
-    virtual void Start(const std::string& ModuleNameOrScript, const std::vector<std::pair<std::string, NFIModule*>>& Arguments, bool IsScript) override;
+    void Start(const std::string& ModuleNameOrScript, const std::vector<std::pair<std::string, NFIModule*>>& Arguments, bool IsScript);
 
-    virtual bool IdleNotificationDeadline(double DeadlineInSeconds) override;
+    bool IdleNotificationDeadline(double DeadlineInSeconds);
 
-    virtual void LowMemoryNotification() override;
+    void LowMemoryNotification();
 
-    virtual void RequestMinorGarbageCollectionForTesting() override;
+    void RequestMinorGarbageCollectionForTesting() ;
 
-    virtual void RequestFullGarbageCollectionForTesting() override;
+    void RequestFullGarbageCollectionForTesting() ;
 
-    virtual void WaitDebugger(int64_t timeout) override
+    void WaitDebugger(int64_t timeout) 
     {
 #ifdef THREAD_SAFE
         v8::Locker Locker(MainIsolate);
@@ -274,17 +274,17 @@ public:
 
 
 
-    virtual std::string CurrentStackTrace() override;
+    std::string CurrentStackTrace() ;
 
     void JsHotReload(std::string ModuleName, const std::string& JsSource);
 
-    void ReloadModule(std::string ModuleName, const std::string& JsSource) override;
+    void ReloadModule(std::string ModuleName, const std::string& JsSource);
 
-    virtual void ReloadSource(const std::string& Path, const std::string& JsSource) override;
+    void ReloadSource(const std::string& Path, const std::string& JsSource) ;
 
     std::function<void(const std::string&)> OnSourceLoadedCallback;
 
-    virtual void OnSourceLoaded(std::function<void(const std::string&)> Callback) override;
+    void OnSourceLoaded(std::function<void(const std::string&)> Callback);
 
 public:
     virtual void UnBindCppObject(JSClassDefinition* ClassDefinition, void* Ptr) override;
