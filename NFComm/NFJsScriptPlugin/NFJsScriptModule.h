@@ -239,7 +239,7 @@ protected:
 public:
     explicit NFJsScriptModule(const std::string& NFDataCfgPath ,const std::string& ScriptRoot);
 
-    NFJsScriptModule(std::shared_ptr<puerts::IJSModuleLoader> InModuleLoader, std::shared_ptr<NFILogModule> InLogger, int InPort,  std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime = nullptr, void* InExternalContext = nullptr);
+    NFJsScriptModule(std::shared_ptr<puerts::IJSModuleLoader> InModuleLoader,int InPort,  std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime = nullptr, void* InExternalContext = nullptr);
 
     virtual ~NFJsScriptModule() override;
 

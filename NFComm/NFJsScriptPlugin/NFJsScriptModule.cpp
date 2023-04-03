@@ -868,14 +868,13 @@ static void ToCPtrArray(const v8::FunctionCallbackInfo<v8::Value>& Info)
         Info.GetReturnValue().Set(Ret);
     }
 
-NFJsScriptModule::NFJsScriptModule(std::shared_ptr<IJSModuleLoader> InModuleLoader, std::shared_ptr<NFILogModule> InLogger, int InDebugPort,std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime, void* InExternalContext)
+NFJsScriptModule::NFJsScriptModule(std::shared_ptr<IJSModuleLoader> InModuleLoader, int InDebugPort,std::function<void(const std::string&)> InOnSourceLoadedCallback, void* InExternalRuntime, void* InExternalContext)
 {
     Started = false;
     Inspector = nullptr;
     InspectorChannel = nullptr;
 
     ModuleLoader = std::move(InModuleLoader);
-    Logger = InLogger;
     OnSourceLoadedCallback = InOnSourceLoadedCallback;
 
     int Argc = 1;
