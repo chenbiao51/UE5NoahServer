@@ -381,12 +381,6 @@ private:
     };
     std::map<NFGUID*,TickDelegateInfo*> TickerDelegateHandleMap;
 
-    v8::UniquePersistent<v8::FunctionTemplate> DelegateTemplate;
-
-    v8::UniquePersistent<v8::FunctionTemplate> MulticastDelegateTemplate;
-
-    v8::UniquePersistent<v8::FunctionTemplate> SoftObjectPtrTemplate;
-
 
     bool ExtensionMethodsMapInited = false;
 

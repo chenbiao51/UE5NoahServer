@@ -983,16 +983,7 @@ exit_code = node::SpinEventLoop(NodeEnv).FromMaybe(1);
                 v8::FunctionTemplate::New(Isolate, ToCPtrArray)->GetFunction(Context).ToLocalChecked())
             .Check();
 
-    MethodBindingHelper<&NFJsScriptModule::ReleaseManualReleaseDelegate>::Bind(Isolate, Context, PuertsObj, "releaseManualReleaseDelegate", This);
-
     CppObjectMapper.Initialize(Isolate, Context);
-
-    DelegateTemplate = v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FDelegateWrapper::ToFunctionTemplate(Isolate));
-
-    MulticastDelegateTemplate =v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FMulticastDelegateWrapper::ToFunctionTemplate(Isolate));
-
-    SoftObjectPtrTemplate = v8::UniquePersistent<v8::FunctionTemplate>(Isolate, FSoftObjectWrapper::ToFunctionTemplate(Isolate));
-
 
     Inspector = CreateV8Inspector(InDebugPort, &Context);
 
@@ -1046,21 +1037,16 @@ NFJsScriptModule::~NFJsScriptModule()
     if (InspectorChannel)
     {
         delete InspectorChannel;
-            InspectorChannel = nullptr;
-        }
-
-        if (Inspector)
-        {
-            delete Inspector;
-            Inspector = nullptr;
-        }
-
-
-        SoftObjectPtrTemplate.Reset();
-        MulticastDelegateTemplate.Reset();
-        DelegateTemplate.Reset();
+        InspectorChannel = nullptr;
     }
 
+    if (Inspector)
+    {
+        delete Inspector;
+        Inspector = nullptr;
+    }
+    
+    }
     DefaultContext.Reset();
     MainIsolate->Dispose();
     MainIsolate = nullptr;
