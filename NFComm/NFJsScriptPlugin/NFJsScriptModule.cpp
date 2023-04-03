@@ -1221,7 +1221,7 @@ void NFJsScriptModule::LoadCppType(const v8::FunctionCallbackInfo<v8::Value>& In
 
 
 
-void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::vector<std::pair<std::string, NFIModule*>>& Arguments, bool IsScript)
+void NFJsScriptModule::Start(const std::string& ModuleNameOrScript,  bool IsScript)
 {
 
     if (Started)
@@ -1268,14 +1268,6 @@ void NFJsScriptModule::Start(const std::string& ModuleNameOrScript, const std::v
     }
 
     auto ArgvAdd = MaybeArgvAdd.ToLocalChecked().As<v8::Function>();
-
-    for (int i = 0; i < Arguments.size(); i++)
-    {
-        auto Object = Arguments[i].second;
-        v8::Local<v8::Value> Args[2] = {FV8Utils::ToV8String(Isolate, Arguments[i].first), FindOrAdd(Isolate, Context, Object->GetClass(), Object)};
-        auto Result = ArgvAdd->Call(Context, Argv, 2, Args);
-    }
-
     if (IsScript)
     {
         v8::ScriptOrigin Origin(FV8Utils::ToV8String(Isolate, "chunk"));

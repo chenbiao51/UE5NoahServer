@@ -243,7 +243,7 @@ public:
 
     virtual ~NFJsScriptModule() override;
 
-    void Start(const std::string& ModuleNameOrScript, const std::vector<std::pair<std::string, NFIModule*>>& Arguments, bool IsScript);
+    void Start(const std::string& ModuleNameOrScript,  bool IsScript);
 
     bool IdleNotificationDeadline(double DeadlineInSeconds);
 
