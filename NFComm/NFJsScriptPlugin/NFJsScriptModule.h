@@ -118,22 +118,6 @@ protected:
 	bool EnterScene(const int sceneID, const int groupID);
 	bool DoEvent(const NFGUID& self, const int eventID, const NFDataList& arg);
 
-	bool FindProperty(const NFGUID& self, const std::string& propertyName);
-
-	bool SetPropertyInt(const NFGUID& self, const std::string& propertyName, const NFINT64 propValue);
-	bool SetPropertyFloat(const NFGUID& self, const std::string& propertyName, const double propValue);
-	bool SetPropertyString(const NFGUID& self, const std::string& propertyName, const std::string& propValue);
-	bool SetPropertyObject(const NFGUID& self, const std::string& propertyName, const NFGUID& propValue);
-	bool SetPropertyVector2(const NFGUID& self, const std::string& propertyName, const NFVector2& propValue);
-	bool SetPropertyVector3(const NFGUID& self, const std::string& propertyName, const NFVector3& propValue);
-
-	NFINT64 GetPropertyInt(const NFGUID& self, const std::string& propertyName);
-	int GetPropertyInt32(const NFGUID& self, const std::string& propertyName);	//equal to (int)GetPropertyInt(...), to remove C4244 warning
-	double GetPropertyFloat(const NFGUID& self, const std::string& propertyName);
-	std::string GetPropertyString(const NFGUID& self, const std::string& propertyName);
-	NFGUID GetPropertyObject(const NFGUID& self, const std::string& propertyName);
-	NFVector2 GetPropertyVector2(const NFGUID& self, const std::string& propertyName);
-	NFVector3 GetPropertyVector3(const NFGUID& self, const std::string& propertyName);
 
 	bool AddPropertyCallBack(const NFGUID& self, std::string& propertyName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
     bool AddRecordCallBack(const NFGUID& self, std::string& recordName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);

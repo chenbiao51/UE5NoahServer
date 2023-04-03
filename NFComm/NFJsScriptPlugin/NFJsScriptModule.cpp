@@ -115,11 +115,6 @@ bool NFJsScriptModule::DoEvent(const NFGUID & self, const int eventID, const NFD
 	return true;
 }
 
-bool NFJsScriptModule::FindProperty(const NFGUID & self, const std::string & propertyName)
-{
-	return m_pKernelModule->FindProperty(self, propertyName);
-}
-
 
 
 bool NFJsScriptModule::AddClassCallBack(std::string& className, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc)
@@ -359,41 +354,31 @@ bool NFJsScriptModule::AddSchedule(const NFGUID& self, std::string& strHeartBeat
 int NFJsScriptModule::OnTimeOutHeartBeatCB(const NFGUID& self, const std::string& strHeartBeatName, const float time, const int count)
 {
 
-	auto funcList = TickerDelegateHandleMap.GetElement(self);
-	if (funcList)
-	{
-		auto funcNameList = funcList->GetElement(self);
-		if (funcNameList)
-		{
-			std::string funcName;
-			auto Ret = funcNameList->First(funcName);
-			while (Ret)
-			{
-				try
-				{
-					LuaIntf::LuaRef func(mLuaContext, funcName.c_str());
-					if (self.IsNull())
-					{
-						func.call<LuaIntf::LuaRef>("", strHeartBeatName, time, count);
-					}
-					else
-					{
-						func.call<LuaIntf::LuaRef>("", self, strHeartBeatName, time, count);
-					}
-				}
-				catch (LuaIntf::LuaException& e)
-				{
-					cout << e.what() << endl;
-				}
-				catch (...)
-				{
-				}
+    auto Iterator = std::find_if(TickerDelegateHandleMap.begin(), TickerDelegateHandleMap.end(), [&](auto& Pair) { return Pair.first == self; });
+    if (Iterator != TickerDelegateHandleMap.end())
+    {
+        Iterator->second->IsCalling = true;
+        v8::Isolate::Scope Isolatecvope(Iterator->second->Isolate);
+        v8::HandleScope HandleScope(Iterator->second->Isolate);
+        v8::Local<v8::Context> Context = v8::Local<v8::Context>::New(Iterator->second->Isolate,Iterator->second->DefaultContext);
+        v8::Context::Scope ContextScope(Context);
+        v8::Local<v8::Function> Function = v8::Local<v8::Function>::New(Iterator->second->Isolate,Iterator->second->DefaultFunction);
 
-				Ret = funcNameList->Next(funcName);
-			}
-		}
-	}
+        v8::TryCatch TyCatch(Iterator->second->Isolate);
+        Iterator->second->IsCalling = true;
+        v8::MaybeLocal<v8::Value> Result = Function->Call(Context,Context->Global(),0,nullptr);
+        Iterator->second->IsCalling = false;
 
+        if (TyCatch.HasCaught())
+        {
+            Iterator->second->exceptionHandler(Iterator->second->Isolate,&TyCatch);
+        }
+
+        if(!Iterator->second->FunctionContinue)
+        {
+            m_pScheduleModule->RemoveSchedule(self);
+        }
+    }
     return 0;
 }
 
@@ -802,7 +787,7 @@ void NFJsScriptModule::OnNetMsgCallBackAsClientForGameServer(const NFSOCK sockIn
 	}
 }
 
-NFJsScriptModule::NFJsScriptModule(const std::string& NFDataCfgPath,const std::string& ScriptRoot): NFJsScriptModule( std::make_shared<DefaultJSModuleLoader>(NFDataCfgPath,ScriptRoot), std::make_shared<NFLogModule>(), -1, nullptr, nullptr, nullptr)
+NFJsScriptModule::NFJsScriptModule(const std::string& NFDataCfgPath,const std::string& ScriptRoot): NFJsScriptModule( std::make_shared<DefaultJSModuleLoader>(NFDataCfgPath,ScriptRoot), -1, nullptr, nullptr, nullptr)
 {
 
 }
