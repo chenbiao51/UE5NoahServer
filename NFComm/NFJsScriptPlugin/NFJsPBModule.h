@@ -28,6 +28,8 @@
 #define NF_JS_PB_MODULE_H
 
 #define LUAINTF_LINK_LUA_COMPILED_IN_CXX 0
+#include "v8.h"
+
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor.pb.h>
@@ -82,10 +84,10 @@ public:
 	virtual void ImportProtoFile(const std::string& strFile);
 
 
-    LuaIntf::LuaRef Decode(const std::string& strMsgTypeName, const std::string& strData);
-	const std::string Encode(const std::string& strMsgTypeName, const LuaIntf::LuaRef& luaTable);
+    v8::Local<v8::Value> Decode(const std::string& strMsgTypeName, const std::string& strData);
+	const std::string Encode(const std::string& strMsgTypeName, const v8::Local<v8::Value>& v8Value);
 protected:
-	void SetLuaState(lua_State* pState);
+	void SetIsolate(v8::Isolate* pState);
 	void PrintMessage(const google::protobuf::Message& messag, const bool bEncode);
 
 	
@@ -93,29 +95,30 @@ protected:
 	friend class NFLuaScriptModule;
 
 private:
-	LuaIntf::LuaRef MessageToTbl(const google::protobuf::Message& message) const;
+	v8::Local<v8::Value> MessageToObject(const google::protobuf::Message& message) const;
 
-	LuaIntf::LuaRef GetField(const google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field) const;
-	LuaIntf::LuaRef GetRepeatedField(const google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field) const;
-	LuaIntf::LuaRef GetRepeatedFieldElement(const google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field, int index) const;
+	v8::Local<v8::Value> GetField(const google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field) const;
+	v8::Local<v8::Value> GetRepeatedField(const google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field) const;
+	v8::Local<v8::Value> GetRepeatedFieldElement(const google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field, int index) const;
 
 
 	///////////////
-	const bool TblToMessage(const LuaIntf::LuaRef& luaTable, google::protobuf::Message& message);
+	const bool ObjectToMessage(const v8::Local<v8::Value>& v8Value, google::protobuf::Message& message);
 	
-	void SetField(google::protobuf::Message& message, const std::string& sField, const LuaIntf::LuaRef& luaValue);
-	void SetRepeatedField(google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field, const LuaIntf::LuaRef& luaTable);
-	void SetRepeatedMapField(google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field, const LuaIntf::LuaRef& luaTable);
-	void AddToRepeatedField(google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field, const LuaIntf::LuaRef& luaValue);
-	void AddToMapField(google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field, const LuaIntf::LuaRef& key, const LuaIntf::LuaRef& val);
-	int GetEnumValue(google::protobuf::Message& message, const LuaIntf::LuaRef& luaValue, const google::protobuf::FieldDescriptor* field) const;
+	void SetField(google::protobuf::Message& message, const std::string& sField, const v8::Local<v8::Value>& luaValue);
+	void SetRepeatedField(google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field, const v8::Local<v8::Value>& v8Value);
+	void SetRepeatedMapField(google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field, const v8::Local<v8::Value>& v8Value);
+	void AddToRepeatedField(google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field, const v8::Local<v8::Value>& luaValue);
+	void AddToMapField(google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field, const v8::Local<v8::String>& key, const v8::Local<v8::Value>& val);
+	int GetEnumValue(google::protobuf::Message& message, const v8::Local<v8::Value>& luaValue, const google::protobuf::FieldDescriptor* field) const;
 
 protected:
 	NFILogModule* m_pLogModule;
 
     int64_t mnTime;
     std::string strVersionCode;
-	lua_State* m_pLuaState;
+	v8::Isolate* Isolate;
+    v8::Local<v8::Context> Context;
 
 	NFMultiFileErrorCollector mErrorCollector;
 	google::protobuf::compiler::DiskSourceTree mSourceTree;

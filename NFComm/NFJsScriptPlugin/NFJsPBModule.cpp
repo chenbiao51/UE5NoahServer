@@ -89,9 +89,9 @@ void NFJsPBModule::ImportProtoFile(const std::string & strFile)
 	};
 }
 
-void NFJsPBModule::SetLuaState(lua_State * pState)
+void NFJsPBModule::SetIsolate(v8::Isolate* pIsolate)
 {
-	m_pLuaState = pState;
+	Isolate = pIsolate;
 }
 
 void NFJsPBModule::PrintMessage(const google::protobuf::Message & message, const bool bEncode)
@@ -111,13 +111,13 @@ void NFJsPBModule::PrintMessage(const google::protobuf::Message & message, const
 	}
 }
 
-LuaIntf::LuaRef NFJsPBModule::Decode(const std::string& strMsgTypeName, const std::string& strData)
+v8::Local<v8::Value> NFJsPBModule::Decode(const std::string& strMsgTypeName, const std::string& strData)
 {
 	const google::protobuf::Descriptor* pDescriptor = m_pImporter->pool()->FindMessageTypeByName(strMsgTypeName);
     if (!pDescriptor)
     {
 		//throw NFException("unknow message struct name: " + strMsgTypeName);
-		return LuaIntf::LuaRef(m_pLuaState, nullptr);
+		return v8::Null(Isolate);
     }
 
     const google::protobuf::Message* pProtoType = m_pFactory->GetPrototype(pDescriptor);
@@ -125,7 +125,7 @@ LuaIntf::LuaRef NFJsPBModule::Decode(const std::string& strMsgTypeName, const st
     {
 		//throw NFException("cannot find the message body from factory: " + strMsgTypeName);
 
-		return LuaIntf::LuaRef(m_pLuaState, nullptr);
+		return v8::Null(Isolate);
     }
 
     //GC
@@ -134,15 +134,18 @@ LuaIntf::LuaRef NFJsPBModule::Decode(const std::string& strMsgTypeName, const st
     if (xMessageBody->ParseFromString(strData))
     {
 		PrintMessage(*xMessageBody, false);
-		return MessageToTbl(*xMessageBody);
+		return MessageToObject(*xMessageBody);
     }
 
-    return LuaIntf::LuaRef(m_pLuaState, nullptr);
+    return v8::Null(Isolate);
 }
 
-const std::string NFJsPBModule::Encode(const std::string& strMsgTypeName, const LuaIntf::LuaRef& luaTable)
+const std::string NFJsPBModule::Encode(const std::string& strMsgTypeName, const v8::Local<v8::Value>& v8Object)
 {
-    luaTable.checkTable();
+    if (v8Object.IsEmpty() || v8Object->IsNull() || !v8Object->IsObject())
+    {
+        return NULL_STR;
+    }
 
     const google::protobuf::Descriptor* pDesc = m_pImporter->pool()->FindMessageTypeByName(strMsgTypeName);
     if (!pDesc)
@@ -159,7 +162,7 @@ const std::string NFJsPBModule::Encode(const std::string& strMsgTypeName, const 
     //GC
     std::shared_ptr<google::protobuf::Message> xMessageBody(pProtoType->New());
 
-	if (TblToMessage(luaTable, *xMessageBody))
+	if (ObjectToMessage(v8Object, *xMessageBody))
 	{
 		PrintMessage(*xMessageBody, true);
 
@@ -169,12 +172,12 @@ const std::string NFJsPBModule::Encode(const std::string& strMsgTypeName, const 
 	return NULL_STR;
 }
 
-LuaIntf::LuaRef NFJsPBModule::MessageToTbl(const google::protobuf::Message& message) const
+v8::Local<v8::Value> NFJsPBModule::MessageToObject(const google::protobuf::Message& message) const
 {
 	const google::protobuf::Descriptor* pDesc = message.GetDescriptor();
 	if (pDesc)
 	{
-		LuaIntf::LuaRef tbl = LuaIntf::LuaRef::createTable(m_pLuaState);
+		v8::Local<v8::Object> v8Object = v8::Object::New(Isolate);
 
 		int nField = pDesc->field_count();
 		for (int i = 0; i < nField; ++i)
@@ -182,7 +185,7 @@ LuaIntf::LuaRef NFJsPBModule::MessageToTbl(const google::protobuf::Message& mess
 			const google::protobuf::FieldDescriptor* pField = pDesc->field(i);
 			if (pField)
 			{
-				tbl[pField->name()] = GetField(message, pField);
+				v8Object->Set(Context,v8::String::NewFromUtf8(Isolate,pField->name().data()).ToLocalChecked(),GetField(message, pField));
 
 				if (pField->cpp_type() != google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE)
 				{
@@ -192,19 +195,19 @@ LuaIntf::LuaRef NFJsPBModule::MessageToTbl(const google::protobuf::Message& mess
 			}
 		}
 
-		return tbl;
+		return v8Object;
 	}
 
 
-	return LuaIntf::LuaRef();
+	return v8::Local<v8::Object>();
 }
 
-LuaIntf::LuaRef NFJsPBModule::GetField(const google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field) const
+v8::Local<v8::Value> NFJsPBModule::GetField(const google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field) const
 {
 
 	if (nullptr == field)
 	{
-		return LuaIntf::LuaRef();
+		return v8::Local<v8::Object>();
 	}
 
 	if (field->is_repeated())
@@ -215,7 +218,7 @@ LuaIntf::LuaRef NFJsPBModule::GetField(const google::protobuf::Message& message,
 	const google::protobuf::Reflection* pReflection = message.GetReflection();
 	if (nullptr == pReflection)
 	{
-		return LuaIntf::LuaRef();
+		return v8::Local<v8::Object>();
 	}
 
 	google::protobuf::FieldDescriptor::CppType eCppType = field->cpp_type();
@@ -223,23 +226,23 @@ LuaIntf::LuaRef NFJsPBModule::GetField(const google::protobuf::Message& message,
 	{
 		// Scalar field always has a default value.
 	case google::protobuf::FieldDescriptor::CPPTYPE_INT32:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetInt32(message, field));
+		return v8::Int32::New(Isolate, pReflection->GetInt32(message, field));
 	case google::protobuf::FieldDescriptor::CPPTYPE_INT64:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetInt64(message, field));
+		return v8::Integer::New(Isolate,  pReflection->GetInt64(message, field));
 	case google::protobuf::FieldDescriptor::CPPTYPE_UINT32:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetUInt32(message, field));
+		return v8::Uint32::New(Isolate, pReflection->GetUInt32(message, field));
 	case google::protobuf::FieldDescriptor::CPPTYPE_UINT64:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetUInt64(message, field));
+		return  v8::Integer::New(Isolate, pReflection->GetUInt64(message, field));
 	case google::protobuf::FieldDescriptor::CPPTYPE_DOUBLE:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetDouble(message, field));
+		return v8::Number::New(Isolate, pReflection->GetDouble(message, field));
 	case google::protobuf::FieldDescriptor::CPPTYPE_FLOAT:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetFloat(message, field));
+		return v8::Number::New(Isolate, pReflection->GetFloat(message, field));
 	case google::protobuf::FieldDescriptor::CPPTYPE_BOOL:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetBool(message, field));
+		return v8::Boolean::New(Isolate, pReflection->GetBool(message, field));
 	case google::protobuf::FieldDescriptor::CPPTYPE_ENUM:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetEnumValue(message, field));
+		return v8::Int32::New(Isolate, pReflection->GetEnumValue(message, field));
 	case google::protobuf::FieldDescriptor::CPPTYPE_STRING:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetString(message, field));
+		return v8::String::NewFromUtf8(Isolate, pReflection->GetString(message, field).data()).ToLocalChecked();
 	case google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE:
 	{
 		// For message field, the default value is null.
@@ -253,9 +256,9 @@ LuaIntf::LuaRef NFJsPBModule::GetField(const google::protobuf::Message& message,
 #else
 			const google::protobuf::Message& subMsg = pReflection->GetMessage(message, field);
 #endif
-			return MessageToTbl(subMsg);
+			return MessageToObject(subMsg);
 		}
-		return  LuaIntf::LuaRef(m_pLuaState, nullptr);
+		return  v8::Null(Isolate);
 	}
 
 	default:
@@ -263,139 +266,137 @@ LuaIntf::LuaRef NFJsPBModule::GetField(const google::protobuf::Message& message,
 	}
 
 
-	return LuaIntf::LuaRef();
+	return v8::Local<v8::Value>();
 }
 
-LuaIntf::LuaRef NFJsPBModule::GetRepeatedField(const google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field) const
+v8::Local<v8::Value> NFJsPBModule::GetRepeatedField(const google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field) const
 {
 	if (!field->is_repeated())
 	{
-		return LuaIntf::LuaRef();
+		return v8::Object::New(Isolate);
 	}
 
 	const google::protobuf::Reflection* pReflection = message.GetReflection();
 	if (nullptr == pReflection)
 	{
-		return LuaIntf::LuaRef();
+		return v8::Local<v8::Object>();
 	}
 
-	LuaIntf::LuaRef tbl = LuaIntf::LuaRef::createTable(m_pLuaState);
+	v8::Local<v8::Object> v8Object = v8::Object::New(Isolate);
 	int nFldSize = pReflection->FieldSize(message, field);
 	if (!field->is_map())
 	{
 		for (int index = 0; index < nFldSize; ++index)
 		{
-			tbl[index + 1] = GetRepeatedFieldElement(message, field, index);
+            v8Object->Set(Context,index,GetRepeatedFieldElement(message, field, index));
 		}
 
-		return tbl;
+		return v8Object;
 	}
 
 	// map
 	if (field->cpp_type() != google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE)
 	{
-		return tbl;
+		return v8Object;
 	}
 
 	for (int i = 0; i < nFldSize; ++i)
 	{
 		const google::protobuf::Message& entryMsg = pReflection->GetRepeatedMessage(message, field, i);
-		LuaIntf::LuaRef entryTbl = MessageToTbl(message);
-		const LuaIntf::LuaRef& key = entryTbl["key"];
-		const LuaIntf::LuaRef& value = entryTbl["value"];
-		tbl[key] = value;
+		v8::Local<v8::Object> entryObj =v8::Local<v8::Object>::Cast(MessageToObject(message));
+		const v8::Local<v8::Value> key = entryObj->Get(Context,v8::String::NewFromUtf8(Isolate,"key").ToLocalChecked()).ToLocalChecked();
+		const v8::Local<v8::Value> value = entryObj->Get(Context,v8::String::NewFromUtf8(Isolate,"value").ToLocalChecked()).ToLocalChecked();
+		v8Object->Set(Context,key,value);
 	}
 
-	return tbl;
+	return v8Object;
 }
 
-LuaIntf::LuaRef NFJsPBModule::GetRepeatedFieldElement(const google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field, int index) const
+v8::Local<v8::Value> NFJsPBModule::GetRepeatedFieldElement(const google::protobuf::Message& message, const google::protobuf::FieldDescriptor* field, int index) const
 {
 	if (!field->is_repeated())
 	{
-		return LuaIntf::LuaRef();
+		return v8::Local<v8::Value>();
 	}
 
 	if (index < 0)
 	{
-		return LuaIntf::LuaRef();
+		return v8::Local<v8::Value>();
 	}
 
 	const google::protobuf::Reflection* pReflection = message.GetReflection();
 	if (nullptr == pReflection)
 	{
-		return LuaIntf::LuaRef();
+		return v8::Local<v8::Value>();
 	}
 
 	if (index >= pReflection->FieldSize(message, field))
 	{
-		return LuaIntf::LuaRef();
+		return v8::Local<v8::Value>();
 	}
 
 	google::protobuf::FieldDescriptor::CppType eCppType = field->cpp_type();
 	switch (eCppType)
 	{
 	case google::protobuf::FieldDescriptor::CPPTYPE_INT32:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetRepeatedInt32(message, field, index));
+		return v8::Int32::New(Isolate, pReflection->GetRepeatedInt32(message, field, index));
 	case google::protobuf::FieldDescriptor::CPPTYPE_INT64:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetRepeatedInt64(message, field, index));
+		return v8::Integer::New(Isolate, pReflection->GetRepeatedInt64(message, field, index));
 	case google::protobuf::FieldDescriptor::CPPTYPE_UINT32:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetRepeatedUInt32(message, field, index));
+		return v8::Uint32::New(Isolate, pReflection->GetRepeatedUInt32(message, field, index));
 	case google::protobuf::FieldDescriptor::CPPTYPE_UINT64:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetRepeatedUInt64(message, field, index));
+		return v8::Integer::New(Isolate, pReflection->GetRepeatedUInt64(message, field, index));
 	case google::protobuf::FieldDescriptor::CPPTYPE_DOUBLE:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetRepeatedDouble(message, field, index));
+		return v8::Number::New(Isolate, pReflection->GetRepeatedDouble(message, field, index));
 	case google::protobuf::FieldDescriptor::CPPTYPE_FLOAT:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetRepeatedFloat(message, field, index));
+		return v8::Number::New(Isolate, pReflection->GetRepeatedFloat(message, field, index));
 	case google::protobuf::FieldDescriptor::CPPTYPE_BOOL:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetRepeatedBool(message, field, index));
+		return v8::Boolean::New(Isolate, pReflection->GetRepeatedBool(message, field, index));
 	case google::protobuf::FieldDescriptor::CPPTYPE_ENUM:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetRepeatedEnumValue(message, field, index));
+		return v8::Int32::New(Isolate, pReflection->GetRepeatedEnumValue(message, field, index));
 	case google::protobuf::FieldDescriptor::CPPTYPE_STRING:
-		return LuaIntf::LuaRefValue(m_pLuaState, pReflection->GetRepeatedString(message, field, index));
+		return v8::String::NewFromUtf8(Isolate, pReflection->GetRepeatedString(message, field, index).data()).ToLocalChecked();
 	case google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE:
 	{
 		const google::protobuf::Message& subMsg = pReflection->GetRepeatedMessage(message, field, index);
-		return MessageToTbl(subMsg);
+		return MessageToObject(subMsg);
 	}
 	default:
 		break;
 	}
 
-	return LuaIntf::LuaRef();
+	return v8::Local<v8::Object>();
 }
 
-const bool NFJsPBModule::TblToMessage(const LuaIntf::LuaRef& luaTable, google::protobuf::Message& message)
+const bool NFJsPBModule::ObjectToMessage(const v8::Local<v8::Value>& v8Object, google::protobuf::Message& message)
 {
-	if (!luaTable.isTable())
+	if (!v8Object->IsObject())
 	{
 		return false;
 	}
 
-	const auto itrEnd = luaTable.end();
-	for (auto itr = luaTable.begin(); itr != itrEnd; ++itr)
+	v8::Local<v8::Object> obj ;
+	if(!v8Object->ToObject(Context).ToLocal(&obj))
 	{
-		const LuaIntf::LuaRef& key = itr.key();
-		if (LuaIntf::LuaTypeID::STRING != key.type())
-		{
-			continue;
-		}
-
-		const std::string& sKey = key.toValue<std::string>();	
-		const LuaIntf::LuaRef& val = itr.value();
-
-		if (!val.isTable())
-		{
-			//std::cout << sKey << " = " << val.toValue<std::string>() << std::endl;
-		}
-
-		SetField(message, sKey, val);
+		return;
 	}
+	// non-map
+	v8::Local<v8::Array> propertyNames = obj->GetOwnPropertyNames(Context).ToLocalChecked();
+    for(uint32_t i=0;i<propertyNames->Length();i++){
+		v8::Local<v8::Value> propKey = propertyNames->Get(Context,i).ToLocalChecked();
+		if(!propKey->IsString()){	continue;}
+		v8::Local<v8::String> propName = propKey->ToString(Context).ToLocalChecked();
+		v8::Local<v8::Value> propValue = obj->Get(Context,propName).ToLocalChecked();
+		if(!propValue->IsObject())
+		{	
 
+		}
+		SetField(message, *v8::String::Utf8Value(Isolate,propName), propValue);
+	}
 	return true;
 }
 
-void NFJsPBModule::SetField(google::protobuf::Message& message, const std::string & sField, const LuaIntf::LuaRef & luaValue)
+void NFJsPBModule::SetField(google::protobuf::Message& message, const std::string & sField, const v8::Local<v8::Value>& v8Value)
 {
 	const google::protobuf::FieldDescriptor* pField = message.GetDescriptor()->FindFieldByName(sField);
 	if (!pField)
@@ -405,7 +406,7 @@ void NFJsPBModule::SetField(google::protobuf::Message& message, const std::strin
 
 	if (pField->is_repeated())
 	{
-		SetRepeatedField(message, pField, luaValue);
+		SetRepeatedField(message, pField, v8Value);
 		return;
 	}
 
@@ -419,40 +420,40 @@ void NFJsPBModule::SetField(google::protobuf::Message& message, const std::strin
 	switch (eCppType)
 	{
 	case google::protobuf::FieldDescriptor::CPPTYPE_INT32:
-		pReflection->SetInt32(&message, pField, luaValue.toValue<int32_t>());
+		pReflection->SetInt32(&message, pField, v8Value->Int32Value(Context).FromMaybe(0));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_INT64:
-		pReflection->SetInt64(&message, pField, luaValue.toValue<int64_t>());
+		pReflection->SetInt64(&message, pField, v8Value->IntegerValue(Context).FromMaybe(0));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_UINT32:
-		pReflection->SetUInt32(&message, pField, luaValue.toValue<uint32_t>());
+		pReflection->SetUInt32(&message, pField, v8Value->Uint32Value(Context).FromMaybe(0));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_UINT64:
-		pReflection->SetUInt64(&message, pField, luaValue.toValue<uint64_t>());
+		pReflection->SetUInt64(&message, pField, v8Value->IntegerValue(Context).FromMaybe(0));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_DOUBLE:
-		pReflection->SetDouble(&message, pField, luaValue.toValue<double>());
+		pReflection->SetDouble(&message, pField,  v8Value->NumberValue(Context).FromMaybe(0.0));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_FLOAT:
-		pReflection->SetFloat(&message, pField, luaValue.toValue<float>());
+		pReflection->AddFloat(&message, pField, static_cast<float>(v8Value->NumberValue(Context).FromMaybe(0.0)));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_BOOL:
-		pReflection->SetBool(&message, pField, luaValue.toValue<bool>());
+		pReflection->SetBool(&message, pField, v8Value->ToBoolean(Isolate)->Value());
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_ENUM:
 		// Support enum name.
-		pReflection->SetEnumValue(&message, pField, GetEnumValue(message, luaValue, pField));
+		pReflection->SetEnumValue(&message, pField, GetEnumValue(message, v8Value, pField));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_STRING:
-		pReflection->SetString(&message, pField, luaValue.toValue<std::string>());
+		pReflection->SetString(&message, pField, *v8::String::Utf8Value(Isolate,v8Value));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE:
-		if (luaValue.isTable())
+		if (v8Value->IsObject())
 		{
 			google::protobuf::Message* pSubMsg = pReflection->MutableMessage(&message, pField);
 			if (pSubMsg)
 			{
-				TblToMessage(luaValue, *pSubMsg);
+				ObjectToMessage(v8Value, *pSubMsg);
 			}
 		}
 	default:
@@ -460,34 +461,39 @@ void NFJsPBModule::SetField(google::protobuf::Message& message, const std::strin
 	}
 }
 
-void NFJsPBModule::SetRepeatedField(google::protobuf::Message& messag, const google::protobuf::FieldDescriptor * field, const LuaIntf::LuaRef & luaTable)
+void NFJsPBModule::SetRepeatedField(google::protobuf::Message& messag, const google::protobuf::FieldDescriptor * field, const v8::Local<v8::Value> & v8Object)
 {
 	if (!field->is_repeated())
 	{
 		return;
 	}
 
-	if (!luaTable.isTable())
+	if (!v8Object->IsObject())
 	{
 		return;
 	}
 
 	if (field->is_map())
 	{
-		SetRepeatedMapField(messag, field, luaTable);
+		SetRepeatedMapField(messag, field, v8Object);
 		return;
 	}
 
-	// non-map
-	int len = luaTable.len();
-	for (int i = 1; i <= len; ++i)
+	v8::Local<v8::Object> obj ;
+	if(!v8Object->ToObject(Context).ToLocal(&obj))
 	{
-		const LuaIntf::LuaRef& val = luaTable[i];
-		AddToRepeatedField(messag, field, val);
+		return;
+	}
+	// non-map
+	v8::Local<v8::Array> propertyNames = obj->GetOwnPropertyNames(Context).ToLocalChecked();
+    for(uint32_t i=0;i<propertyNames->Length();i++){
+		v8::Local<v8::String> propName = propertyNames->Get(Context,i).ToLocalChecked();
+		v8::Local<v8::Value> propValue = obj->Get(Context,propName).ToLocalChecked();
+		AddToRepeatedField(messag, field, propValue);
 	}
 }
 
-void NFJsPBModule::SetRepeatedMapField(google::protobuf::Message& messag, const google::protobuf::FieldDescriptor * field, const LuaIntf::LuaRef & luaTable)
+void NFJsPBModule::SetRepeatedMapField(google::protobuf::Message& messag, const google::protobuf::FieldDescriptor * field, const v8::Local<v8::Value>& v8Object)
 {
 	if (!field->is_repeated())
 	{
@@ -499,21 +505,26 @@ void NFJsPBModule::SetRepeatedMapField(google::protobuf::Message& messag, const 
 		return;
 	}
 
-	if (!luaTable.isTable())
+	if (!v8Object->IsObject())
 	{
 		return;
 	}
-
-	const auto itrEnd = luaTable.end();
-	for (auto itr = luaTable.begin(); itr != itrEnd; ++itr)
+	v8::Local<v8::Object> obj ;
+	if(!v8Object->ToObject(Context).ToLocal(&obj))
 	{
-		const LuaIntf::LuaRef& key = itr.key();
-		const LuaIntf::LuaRef& val = itr.value();
-		AddToMapField(messag, field, key, val);
+		return;
+	}
+	
+	v8::Local<v8::Array> propertyNames = obj->GetOwnPropertyNames(Context).ToLocalChecked();
+    for(uint32_t i=0;i<propertyNames->Length();i++){
+		v8::Local<v8::String> propName = propertyNames->Get(Context,i).ToLocalChecked().As<v8::String>();
+		v8::Local<v8::Value> propValue = obj->Get(Context,propName).ToLocalChecked();
+
+		AddToMapField(messag, field, propName, propValue);
 	}
 }
 
-void NFJsPBModule::AddToRepeatedField(google::protobuf::Message& message, const google::protobuf::FieldDescriptor * field, const LuaIntf::LuaRef & luaValue)
+void NFJsPBModule::AddToRepeatedField(google::protobuf::Message& message, const google::protobuf::FieldDescriptor * field, const v8::Local<v8::Value> & v8Value)
 {
 	if (!field->is_repeated())
 	{
@@ -535,40 +546,40 @@ void NFJsPBModule::AddToRepeatedField(google::protobuf::Message& message, const 
 	switch (eCppType)
 	{
 	case google::protobuf::FieldDescriptor::CPPTYPE_INT32:
-		pReflection->AddInt32(&message, field, luaValue.toValue<int32_t>());
+		pReflection->AddInt32(&message, field, v8Value->Int32Value(Context).FromMaybe(0));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_INT64:
-		pReflection->AddInt64(&message, field, luaValue.toValue<int64_t>());
+		pReflection->AddInt64(&message, field, v8Value->ToNumber(Context).ToLocalChecked()->Value());
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_UINT32:
-		pReflection->AddUInt32(&message, field, luaValue.toValue<uint32_t>());
+		pReflection->AddUInt32(&message, field, v8Value->ToUint32(Context).ToLocalChecked()->Value());
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_UINT64:
-		pReflection->AddUInt64(&message, field, luaValue.toValue<uint64_t>());
+		pReflection->AddUInt64(&message, field, v8Value->IntegerValue(Context).FromMaybe(0));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_DOUBLE:
-		pReflection->AddDouble(&message, field, luaValue.toValue<double>());
+		pReflection->AddDouble(&message, field,  v8Value->ToNumber(Context).ToLocalChecked()->Value());
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_FLOAT:
-		pReflection->AddFloat(&message, field, luaValue.toValue<float>());
+		pReflection->AddFloat(&message, field, static_cast<float>(v8Value->NumberValue(Context).FromMaybe(0.0)));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_BOOL:
-		pReflection->AddBool(&message, field, luaValue.toValue<bool>());
+		pReflection->AddBool(&message, field, v8Value->ToBoolean(Isolate)->Value());
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_ENUM:
 		// Support enum name.
-		pReflection->AddEnumValue(&message, field, GetEnumValue(message, luaValue, field));
+		pReflection->AddEnumValue(&message, field, GetEnumValue(message, v8Value, field));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_STRING:
-		pReflection->AddString(&message, field, luaValue.toValue<std::string>());
+		pReflection->AddString(&message, field, *v8::String::Utf8Value(Isolate,v8Value));
 		break;
 	case google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE:
-		if (luaValue.isTable())
+		if (v8Value->IsObject())
 		{
 			google::protobuf::Message* pSubMsg = pReflection->AddMessage(&message, field);
 			if (pSubMsg)
 			{
-				TblToMessage(luaValue, *pSubMsg);
+				ObjectToMessage(v8Value, *pSubMsg);
 			}
 		}
 		break;
@@ -577,7 +588,7 @@ void NFJsPBModule::AddToRepeatedField(google::protobuf::Message& message, const 
 	}
 }
 
-void NFJsPBModule::AddToMapField(google::protobuf::Message& message, const google::protobuf::FieldDescriptor * field, const LuaIntf::LuaRef & key, const LuaIntf::LuaRef & val)
+void NFJsPBModule::AddToMapField(google::protobuf::Message& message, const google::protobuf::FieldDescriptor * field, const v8::Local<v8::String> & key, const v8::Local<v8::Value> & val)
 {
 	if (!field->is_repeated())
 	{
@@ -611,18 +622,20 @@ void NFJsPBModule::AddToMapField(google::protobuf::Message& message, const googl
 	{
 		return;
 	}
+	v8::String::Utf8Value utf8Value(Isolate,key);
+	std::string strKey(*utf8Value);
 
-	SetField(*pMapEntry, key.toValue<std::string>(), val);
+	SetField(*pMapEntry,strKey, val);
 }
 
-int NFJsPBModule::GetEnumValue(google::protobuf::Message& messag, const LuaIntf::LuaRef & luaValue, const google::protobuf::FieldDescriptor * field) const
+int NFJsPBModule::GetEnumValue(google::protobuf::Message& messag, const v8::Local<v8::Value> & v8Value, const google::protobuf::FieldDescriptor * field) const
 {
-	if (luaValue.type() != LuaIntf::LuaTypeID::STRING)
+	if (!v8Value->IsString())
 	{
-		return luaValue.toValue<int>();
+		return v8Value->ToInt32(Context).ToLocalChecked()->Value();
 	}
 
-	std::string sEnum = luaValue.toValue<string>();
+	std::string sEnum(*v8::String::Utf8Value(Isolate,v8Value));
 	if (field->cpp_type() != google::protobuf::FieldDescriptor::CPPTYPE_ENUM)
 	{
 		return 0;
@@ -640,5 +653,5 @@ int NFJsPBModule::GetEnumValue(google::protobuf::Message& messag, const LuaIntf:
 		return pEnumVal->number();
 	}
 
-	return luaValue.toValue<int>();  // "123" -> 123
+	return v8Value->ToInt32(Context).ToLocalChecked()->Value(); // "123" -> 123
 }
