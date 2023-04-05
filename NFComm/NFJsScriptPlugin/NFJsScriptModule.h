@@ -148,8 +148,8 @@ protected:
 
 
     void ImportProtoFile(const std::string& fileName);
-    const std::string Encode(const std::string& msgTypeName, const LuaIntf::LuaRef& luaTable);
-	LuaIntf::LuaRef Decode(const std::string& msgTypeName, const std::string& data);
+    const std::string Encode(const std::string& msgTypeName, const v8::Local<v8::Value>& v8Value);
+	v8::Local<v8::Value> Decode(const std::string& msgTypeName, const std::string& data);
 
 	void SendToServerByServerID(const int serverID, const uint16_t msgID, const std::string& data);
 	void SendToServerBySuit(const NF_SERVER_TYPES eType, const uint16_t msgID, const std::string& data, const std::string& hash);

@@ -52,7 +52,7 @@ bool NFJsScriptModule::Awake()
     m_pScheduleModule = pPluginManager->FindModule<NFIScheduleModule>();
     m_pNetClientModule = pPluginManager->FindModule<NFINetClientModule>();
     m_pNetModule = pPluginManager->FindModule<NFINetModule>();
-    m_pLogModule = pPluginManager->FindModule<NFILogModule>();
+    m_pLogModule  =  std::shared_ptr<NFILogModule>(pPluginManager->FindModule<NFILogModule>());
 
 	
 
@@ -117,159 +117,6 @@ bool NFJsScriptModule::DoEvent(const NFGUID & self, const int eventID, const NFD
 
 
 
-bool NFJsScriptModule::AddClassCallBack(std::string& className, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc)
-{
-	auto funcNameList = mxClassEventFuncMap.GetElement(className);
-	if (!funcNameList)
-	{
-		funcNameList = new NFList<string>();
-		mxClassEventFuncMap.AddElement(className, funcNameList);
-
-		m_pKernelModule->AddClassCallBack(className, this, &NFJsScriptModule::OnClassEventCB);
-	}
-	
-	std::string strfuncName = FindFuncName(luaTable, luaFunc);
-	if (!strfuncName.empty())
-	{
-		if (!funcNameList->Find(strfuncName))
-		{
-			funcNameList->Add(strfuncName);
-
-			return true;
-		}
-	}
-
-	return false;
-}
-
-int NFJsScriptModule::OnClassEventCB(const NFGUID& objectId, const std::string& className, const CLASS_OBJECT_EVENT classEvent, const NFDataList& var)
-{
-    auto funcNameList = mxClassEventFuncMap.GetElement(className);
-    if (funcNameList)
-    {
-		std::string strFuncNme;
-		bool ret = funcNameList->First(strFuncNme);
-		while (ret)
-		{
-			try
-			{
-				LuaIntf::LuaRef func(mLuaContext, strFuncNme.c_str());
-				func.call("", objectId, className, (int)classEvent, (NFDataList)var);
-			}
-			catch (LuaIntf::LuaException& e)
-			{
-				cout << e.what() << endl;
-				return 0;
-			}
-			catch (...)
-			{
-				return 0;
-			}
-
-			ret = funcNameList->Next(strFuncNme);
-		}
-    }
-
-	return -1;
-}
-
-
-bool NFJsScriptModule::AddPropertyCallBack(const NFGUID& self, std::string& propertyName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc)
-{
-	std::string luaFuncName = FindFuncName(luaTable, luaFunc);
-	if (!luaFuncName.empty())
-	{
-		if (AddLuaFuncToMap(mxLuaPropertyCallBackFuncMap, self, propertyName, luaFuncName))
-		{
-			m_pKernelModule->AddPropertyCallBack(self, propertyName, this, &NFJsScriptModule::OnLuaPropertyCB);
-		}
-
-		return true;
-	}
-    return false;
-}
-
-int NFJsScriptModule::OnLuaPropertyCB(const NFGUID& self, const std::string& propertyName, const NFData& oldVar, const NFData& newVar, const NFINT64 reason)
-{
-	auto funcList = mxLuaPropertyCallBackFuncMap.GetElement(propertyName);
-	if (funcList)
-	{
-		auto funcNameList = funcList->GetElement(self);
-		if (funcNameList)
-		{
-			std::string funcName;
-			auto Ret = funcNameList->First(funcName);
-			while (Ret)
-			{
-				try
-				{
-					LuaIntf::LuaRef func(mLuaContext, funcName.c_str());
-					func.call("", self, propertyName, oldVar, newVar);
-				}
-				catch (LuaIntf::LuaException& e)
-				{
-					cout << e.what() << endl;
-				}
-				catch (...)
-				{
-				}
-
-				Ret = funcNameList->Next(funcName);
-			}
-		}
-	}
-
-
-	return 0;
-}
-
-bool NFJsScriptModule::AddRecordCallBack(const NFGUID& self, std::string& recordName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc)
-{
-	std::string luaFuncName = FindFuncName(luaTable, luaFunc);
-	if (!luaFuncName.empty())
-	{
-		if (AddLuaFuncToMap(mxLuaRecordCallBackFuncMap, self, recordName, luaFuncName))
-		{
-			m_pKernelModule->AddRecordCallBack(self, recordName, this, &NFJsScriptModule::OnLuaRecordCB);
-		}
-		return true;
-	}
-
-	return false;
-}
-
-int NFJsScriptModule::OnLuaRecordCB(const NFGUID& self, const RECORD_EVENT_DATA& eventData, const NFData& oldVar, const NFData& newVar)
-{
-	auto funcList = mxLuaRecordCallBackFuncMap.GetElement(eventData.recordName);
-	if (funcList)
-	{
-		auto funcNameList = funcList->GetElement(self);
-		if (funcNameList)
-		{
-			std::string funcName;
-			auto Ret = funcNameList->First(funcName);
-			while (Ret)
-			{
-				try
-				{
-					LuaIntf::LuaRef func(mLuaContext, funcName.c_str());
-					func.call<LuaIntf::LuaRef>("", self, eventData.recordName, eventData.nOpType, eventData.row, eventData.col, oldVar, newVar);
-				}
-				catch (LuaIntf::LuaException& e)
-				{
-					cout << e.what() << endl;
-				}
-				catch (...)
-				{
-				}
-
-				Ret = funcNameList->Next(funcName);
-			}
-		}
-	}
-
-    return 0;
-}
 
 bool NFJsScriptModule::AddEventCallBack(const NFGUID& self, const int eventID, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc)
 {
@@ -518,13 +365,13 @@ void NFJsScriptModule::ImportProtoFile(const std::string& fileName)
 	p->ImportProtoFile(fileName);
 }
 
-const std::string NFJsScriptModule::Encode(const std::string& msgTypeName, const LuaIntf::LuaRef& luaTable)
+const std::string NFJsScriptModule::Encode(const std::string& msgTypeName, const v8::Local<v8::Value>& v8Value)
 {
 	NFJsPBModule* p = (NFJsPBModule*)m_pJsPBModule;
-	return p->Encode(msgTypeName, luaTable);
+	return p->Encode(msgTypeName, v8Value);
 }
 
-LuaIntf::LuaRef NFJsScriptModule::Decode(const std::string& msgTypeName, const std::string& data)
+v8::Local<v8::Value> NFJsScriptModule::Decode(const std::string& msgTypeName, const std::string& data)
 {
 	NFJsPBModule* p = (NFJsPBModule*)m_pJsPBModule;
 	return p->Decode(msgTypeName, data);
