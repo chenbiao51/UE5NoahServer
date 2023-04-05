@@ -363,7 +363,23 @@ private:
         TickDelegateInfo(){
         }
     };
-    std::map<NFGUID*,TickDelegateInfo*> TickerDelegateHandleMap;
+    std::map<NFGUID*,TickDelegateInfo*> TickerDelegateHandleMap; 
+    struct DelegateObjectInfo
+    {
+        v8::Isolate *Isolate;
+        v8::Global<v8::Context> DefaultContext;
+        v8::Global<v8::Function> DefaultFunction;
+        std::function<void(v8::Isolate*,v8::TryCatch*)> exceptionHandler;
+        std::function<void(NFGUID*)> DelegateHandleCleaner;
+        bool FunctionContinue;
+        bool IsCalling;
+
+        DelegateObjectInfo(){
+        }
+    };
+    std::map<void*,DelegateObjectInfo> DelegateMap;
+    
+    
 
 
     bool ExtensionMethodsMapInited = false;
