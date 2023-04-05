@@ -6,11 +6,7 @@
  * which is part of this source code package.
  */
 
-#if defined(UE_GAME) || defined(UE_EDITOR)
-#define USING_UE 1
-#else
-#define USING_UE 0
-#endif
+
 
 #if (PLATFORM_WINDOWS || PLATFORM_MAC || WITH_INSPECTOR) && !defined(WITHOUT_INSPECTOR)
 
@@ -35,15 +31,9 @@
 #include "websocketpp/config/asio_no_tls.hpp"
 #include "websocketpp/server.hpp"
 
-#if USING_UE
-#include "Containers/Ticker.h"
-#else
-#include "Log.h"
-#endif
 
-#if USING_UE
-DEFINE_LOG_CATEGORY_STATIC(LogV8Inspector, Log, All);
-#endif
+#include "Log.h"
+
 
 namespace puerts
 {
@@ -134,11 +124,7 @@ void V8InspectorChannelImpl::sendNotification(std::unique_ptr<v8_inspector::Stri
     SendMessage(*Message);
 }
 
-class V8InspectorClientImpl : public V8Inspector,
-#if USING_UE
-                              public FTickerObjectBase,
-#endif
-                              public v8_inspector::V8InspectorClient
+class V8InspectorClientImpl : public V8Inspector, public v8_inspector::V8InspectorClient
 {
 public:
     using wspp_server = websocketpp::server<websocketpp::config::asio>;
@@ -155,11 +141,7 @@ public:
 
     void Close() override;
 
-#if USING_UE
-    bool Tick(float DeltaTime) override;
-#else
     bool Tick(float DeltaTime);
-#endif
 
     bool Tick() override;
 
@@ -214,28 +196,6 @@ private:
     bool Connected;
 };
 
-#if USING_UE
-void ReportException(const websocketpp::exception& Exception, const TCHAR* JobInfo)
-{
-#if PLATFORM_WINDOWS
-    int len = MultiByteToWideChar(CP_ACP, 0, Exception.what(), -1, NULL, 0);
-    wchar_t* wstr = new wchar_t[len + 1];
-    memset(wstr, 0, len + 1);
-    MultiByteToWideChar(CP_ACP, 0, Exception.what(), -1, wstr, len);
-    len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, NULL, 0, NULL, NULL);
-    char* str = new char[len + 1];
-    memset(str, 0, len + 1);
-    WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, len, NULL, NULL);
-    if (wstr)
-        delete[] wstr;
-    UE_LOG(LogV8Inspector, Warning, TEXT("%s, errno:%d, message:%s"), JobInfo, Exception.code().value(), UTF8_TO_TCHAR(str));
-    delete str;
-#else
-    UE_LOG(LogV8Inspector, Warning, TEXT("%s, errno:%d, message:%s"), JobInfo, Exception.code().value(),
-        ANSI_TO_TCHAR(Exception.what()));
-#endif
-}
-#endif
 
 void MicroTasksRunnerFunction(const v8::FunctionCallbackInfo<v8::Value>& Info)
 {
@@ -245,9 +205,6 @@ void MicroTasksRunnerFunction(const v8::FunctionCallbackInfo<v8::Value>& Info)
 }
 
 V8InspectorClientImpl::V8InspectorClientImpl(int32_t InPort, v8::Local<v8::Context> InContext)
-#if USING_UE
-    : FTickerObjectBase(0.001f)
-#endif
 {
     Isolate = InContext->GetIsolate();
     Context.Reset(Isolate, InContext);
@@ -301,25 +258,13 @@ V8InspectorClientImpl::V8InspectorClientImpl(int32_t InPort, v8::Local<v8::Conte
 
         IsAlive = true;
 
-#if USING_UE
-        FString InspectorUrl =
-            FString::Printf(TEXT("devtools://devtools/bundled/inspector.html?v8only=true&ws=127.0.0.1:%d"), Port);
-        UE_LOG(LogV8Inspector, Log,
-            TEXT("Startup Inspector Successfully!\n"
-                 "Please Open This URL in Debugger Front-End(e.g. Chrome DevTool):\n \n"
-                 "\t%s\n \n"),
-            *InspectorUrl);
-#endif
     }
     catch (const websocketpp::exception& Exception)
     {
         IsAlive = false;
-#if USING_UE
-        ReportException(Exception, TEXT("Failed to Startup Inspector"));
-#else
+
         PLog(Error, "V8InspectorClientImpl: %s", Exception.what());
         PLog(Error, "Failed to Startup Inspector.");
-#endif
     }
 
     IsPaused = false;
@@ -383,11 +328,8 @@ bool V8InspectorClientImpl::Tick(float /* DeltaTime */)
     }
     catch (const wspp_exception& Exception)
     {
-#if USING_UE
-        ReportException(Exception, TEXT("Tick"));
-#else
+
         PLog(Error, "Tick: %s", Exception.what());
-#endif
     }
     return true;
 }
@@ -407,42 +349,31 @@ void V8InspectorClientImpl::OnHTTP(wspp_connection_hdl Handle)
 
         if (Resource == "/json" || Resource == "/json/list")
         {
-#if USING_UE
-            UE_LOG(LogV8Inspector, Display, TEXT("request /json/list"));
-#else
+
             PLog(Log, "request /json/list");
-#endif
+
             Connection->set_body(JSONList);
             Connection->set_status(websocketpp::http::status_code::ok);
         }
         else if (Resource == "/json/version")
         {
-#if USING_UE
-            UE_LOG(LogV8Inspector, Display, TEXT("request /json/version"));
-#else
+
             PLog(Log, "request /json/version");
-#endif
             Connection->set_body(JSONVersion);
             Connection->set_status(websocketpp::http::status_code::ok);
         }
         else
         {
-#if USING_UE
-            UE_LOG(LogV8Inspector, Display, TEXT("404 Not Found"));
-#else
+
             PLog(Log, "404 Not Found");
-#endif
             Connection->set_body("404 Not Found");
             Connection->set_status(websocketpp::http::status_code::not_found);
         }
     }
     catch (const wspp_exception& Exception)
     {
-#if USING_UE
-        ReportException(Exception, TEXT("OnHTTP"));
-#else
+
         PLog(Error, "OnHTTP: %s", Exception.what());
-#endif
     }
 }
 
@@ -451,20 +382,16 @@ void V8InspectorClientImpl::OnOpen(wspp_connection_hdl Handle)
     V8InspectorChannelImpl* channel = new V8InspectorChannelImpl(V8Inspector, CtxGroupID);
     V8InspectorChannels[Handle.lock().get()] = channel;
     channel->OnMessage(std::bind(&V8InspectorClientImpl::OnSendMessage, this, Handle, std::placeholders::_1));
-#if USING_UE
-    UE_LOG(LogV8Inspector, Display, TEXT("Inspector: Connect"));
-#else
+
     PLog(Log, "Inspector: Connect");
-#endif
+
 }
 
 void V8InspectorClientImpl::OnReceiveMessage(wspp_connection_hdl Handle, wspp_message_ptr Message)
 {
-    //#if USING_UE
-    //    UE_LOG(LogV8Inspector, Display, TEXT("<---: %s"), ANSI_TO_TCHAR(Message->get_payload().c_str()));
-    //#else
-    //    PLog(Log, "<---: %s", Message->get_payload().c_str());
-    //#endif
+
+    //PLog(Log, "<---: %s", Message->get_payload().c_str());
+
     auto channel = V8InspectorChannels[Handle.lock().get()];
 
     {
@@ -477,23 +404,16 @@ void V8InspectorClientImpl::OnReceiveMessage(wspp_connection_hdl Handle, wspp_me
 
 void V8InspectorClientImpl::OnSendMessage(wspp_connection_hdl Handle, const std::string& Message)
 {
-    //#if USING_UE
-    //    UE_LOG(LogV8Inspector, Display, TEXT("--->: %s"), ANSI_TO_TCHAR(Message.c_str()));
-    //#else
-    //    PLog(Log, "--->: %s", Message.c_str());
-    //#endif
 
+    //PLog(Log, "--->: %s", Message.c_str());
     try
     {
         Server.send(Handle, Message, websocketpp::frame::opcode::TEXT);
     }
     catch (const websocketpp::exception& Exception)
     {
-#if USING_UE
-        ReportException(Exception, TEXT("OnSendMessage"));
-#else
+
         PLog(Error, "OnSendMessage: %s", Exception.what());
-#endif
     }
 }
 
@@ -502,16 +422,11 @@ void V8InspectorClientImpl::OnClose(wspp_connection_hdl Handle)
     void* HandlePtr = Handle.lock().get();
     delete V8InspectorChannels[HandlePtr];
     V8InspectorChannels.erase(HandlePtr);
-#if USING_UE
-    UE_LOG(LogV8Inspector, Display, TEXT("Inspector: Disconnect"));
-#endif
 }
 
 void V8InspectorClientImpl::OnFail(wspp_connection_hdl Handle)
 {
-#if USING_UE
-    UE_LOG(LogV8Inspector, Error, TEXT("Connection OnFail"));
-#endif
+
 }
 
 void V8InspectorClientImpl::runMessageLoopOnPause(int /* ContextGroupId */)
