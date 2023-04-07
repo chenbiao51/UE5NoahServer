@@ -126,7 +126,7 @@ private:
     };
     std::map<NFGUID*,TickDelegateInfo*> TickerDelegateHandleMap; 
 
-    struct JsEventInfo
+    struct EventInfo
     {
         int EventId ;
         v8::Isolate *Isolate;
@@ -135,10 +135,9 @@ private:
         std::function<void(v8::Isolate*,v8::TryCatch*)> exceptionHandler;
         std::function<void(NFGUID*)> DelegateHandleCleaner;
         bool IsCalling;
-        JsEventInfo(){
+        EventInfo(){
         }
     };
-    std::map<NFGUID*,JsEventInfo*> DelegateHandleMap;
 protected:
 
 
@@ -147,7 +146,7 @@ protected:
 	bool EnterScene(const int sceneID, const int groupID);
 	bool DoEvent(const NFGUID& self, const int eventID, const NFDataList& arg);
 
-    JsEventInfo* FindDelegate(const NFGUID& self);
+    EventInfo* FindDelegate(const NFGUID& self);
     bool AddEventCallBack(const NFGUID& self, const int eventID, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
 
 
@@ -172,7 +171,7 @@ protected:
 
 protected:
     template<typename T>
-    bool AddLuaFuncToMap(NFMap<T, NFMap<NFGUID, NFList<string>>>& funcMap, const NFGUID& self, T key, std::string& luaFunc);
+    bool AddEventInfoToMap(NFMap<T, NFMap<NFGUID, NFList<EventInfo*>>>& funcMap, const NFGUID& self, T key, EventInfo& eventInfo);
 
    
     int OnTimeOutHeartBeatCB(const NFGUID& self, const std::string& strHeartBeatName, const float time, const int count);
@@ -193,7 +192,7 @@ protected:
     int64_t mnTime;
     std::string strVersionCode;
 
-    NFMap<int, NFMap<NFGUID, NFList<DelegateInfo*>>> m_JsEventCallBackFuncMap;
+    NFMap<int, NFMap<NFGUID, NFList<EventInfo*>>> mxJsEventCallBackFuncMap;
 public:
     explicit NFJsScriptModule(const std::string& NFDataCfgPath ,const std::string& ScriptRoot);
 

@@ -90,7 +90,6 @@ bool NFJsScriptModule::Execute()
     {
         mnTime = pPluginManager->GetNowTime();
 
-        OnScriptReload();
     }
 
     return true;
@@ -123,7 +122,7 @@ bool NFJsScriptModule::AddEventCallBack(const NFGUID& self, const int eventID, c
 	auto mDelegate = FindDelegate(self);
 	if (mDelegate==nullptr)
 	{
-		if (AddLuaFuncToMap(mxLuaEventCallBackFuncMap, self, (int)eventID, luaFuncName))
+		if (AddEventInfoToMap(mxJsEventCallBackFuncMap, self, (int)eventID, luaFuncName))
 		{
 			m_pEventModule->AddEventCallBack(self, eventID, this, &NFJsScriptModule::OnLuaEventCB);
 		}
@@ -984,7 +983,8 @@ void NFJsScriptModule::SetFTickerDelegate(const v8::FunctionCallbackInfo<v8::Val
     Info.GetReturnValue().Set(v8::External::New(Info.GetIsolate(), tdhandle));
 }
 
-NFJsScriptModule::DelegateInfo* NFJsScriptModule::FindDelegate(const NFGUID& self)
+template<typename T>
+bool NFJsScriptModule::AddEventInfoToMap(NFMap<T, NFMap<NFGUID, NFList<EventInfo*>>>& funcMap,const  NFGUID& self, T key, EventInfo& eventInfo)
 {
 	auto Iterator = std::find_if(DelegateHandleMap.begin(), DelegateHandleMap.end(), [&](auto& Pair) { return Pair.first == self; });
     if (Iterator != DelegateHandleMap.end())
