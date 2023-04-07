@@ -126,18 +126,19 @@ private:
     };
     std::map<NFGUID*,TickDelegateInfo*> TickerDelegateHandleMap; 
 
-    struct DelegateInfo
+    struct JsEventInfo
     {
+        int EventId ;
         v8::Isolate *Isolate;
         v8::Global<v8::Context> DefaultContext;
         v8::Global<v8::Function> DefaultFunction;
         std::function<void(v8::Isolate*,v8::TryCatch*)> exceptionHandler;
         std::function<void(NFGUID*)> DelegateHandleCleaner;
         bool IsCalling;
-        DelegateInfo(){
+        JsEventInfo(){
         }
     };
-    std::map<NFGUID*,DelegateInfo*> DelegateHandleMap;
+    std::map<NFGUID*,JsEventInfo*> DelegateHandleMap;
 protected:
 
 
@@ -146,7 +147,7 @@ protected:
 	bool EnterScene(const int sceneID, const int groupID);
 	bool DoEvent(const NFGUID& self, const int eventID, const NFDataList& arg);
 
-    DelegateInfo* FindDelegate(const NFGUID& self);
+    JsEventInfo* FindDelegate(const NFGUID& self);
     bool AddEventCallBack(const NFGUID& self, const int eventID, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
 
 
@@ -192,19 +193,7 @@ protected:
     int64_t mnTime;
     std::string strVersionCode;
 
-
-    NFMap<std::string, NFMap<NFGUID, NFList<std::string>>> mxLuaPropertyCallBackFuncMap;
-    NFMap<std::string, NFMap<NFGUID, NFList<std::string>>> mxLuaRecordCallBackFuncMap;
-    NFMap<int, NFMap<NFGUID, NFList<std::string>>> mxLuaEventCallBackFuncMap;
-    NFMap<std::string, NFMap<NFGUID, NFList<std::string>>> mxJsHeartBeatCallBackFuncMap;
-
-    NFMap<std::string, NFList<std::string>> mxClassEventFuncMap;
-
-
-	NFMap<int, NFList<std::string>> mxNetMsgCallBackFuncMapAsServer;
-	NFMap<NF_SERVER_TYPES, NFMap<int, NFList<std::string>>> mxNetMsgCallBackFuncMapAsClient;
-
-
+    NFMap<int, NFMap<NFGUID, NFList<DelegateInfo*>>> m_JsEventCallBackFuncMap;
 public:
     explicit NFJsScriptModule(const std::string& NFDataCfgPath ,const std::string& ScriptRoot);
 
