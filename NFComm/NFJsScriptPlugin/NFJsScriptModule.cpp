@@ -120,17 +120,16 @@ bool NFJsScriptModule::DoEvent(const NFGUID & self, const int eventID, const NFD
 
 bool NFJsScriptModule::AddEventCallBack(const NFGUID& self, const int eventID, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc)
 {
-	std::string luaFuncName = FindFuncName(luaTable, luaFunc);
-	if (!luaFuncName.empty())
+	auto mDelegate = FindDelegate(self);
+	if (mDelegate==nullptr)
 	{
 		if (AddLuaFuncToMap(mxLuaEventCallBackFuncMap, self, (int)eventID, luaFuncName))
 		{
 			m_pEventModule->AddEventCallBack(self, eventID, this, &NFJsScriptModule::OnLuaEventCB);
 		}
 
-		return true;
+		return false;
 	}
-
 	return false;
 }
 
@@ -168,35 +167,6 @@ int NFJsScriptModule::OnLuaEventCB(const NFGUID& self, const int eventID, const 
     return 0;
 }
 
-bool NFJsScriptModule::AddModuleSchedule(std::string& strHeartBeatName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc, const float time, const int count)
-{
-	std::string luaFuncName = FindFuncName(luaTable, luaFunc);
-	if (!luaFuncName.empty())
-	{
-		if (AddLuaFuncToMap(mxLuaHeartBeatCallBackFuncMap, strHeartBeatName, luaFuncName))
-		{
-			return m_pScheduleModule->AddSchedule(NFGUID(), strHeartBeatName, this, &NFJsScriptModule::OnLuaHeartBeatCB, time, count);
-		}
-	}
-
-	return false;
-}
-
-bool NFJsScriptModule::AddSchedule(const NFGUID& self, std::string& strHeartBeatName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc, const float time, const int count)
-{
-	std::string luaFuncName = FindFuncName(luaTable, luaFunc);
-	if (!luaFuncName.empty())
-	{
-		if (AddLuaFuncToMap(mxJsHeartBeatCallBackFuncMap, self, strHeartBeatName, luaFuncName))
-		{
-			m_pScheduleModule->AddSchedule(self, strHeartBeatName, this, &NFJsScriptModule::OnTimeOutHeartBeatCB, time, count);
-		}
-
-		return true;
-	}
-
-	return false;
-}
 
 int NFJsScriptModule::OnTimeOutHeartBeatCB(const NFGUID& self, const std::string& strHeartBeatName, const float time, const int count)
 {
@@ -269,95 +239,7 @@ NFINT64 NFJsScriptModule::APPType()
 	return 0;
 }
 
-bool NFJsScriptModule::ExistElementObject(const std::string & configName)
-{
-	return m_pElementModule->ExistElement(configName);
-}
 
-std::vector<std::string> NFJsScriptModule::GetEleList(const std::string& className)
-{
-    NF_SHARE_PTR<NFIClass> xLogicClass = m_pClassModule->GetElement(NFrame::Server::ThisName());
-	if (xLogicClass)
-	{
-		return xLogicClass->GetIDList();
-    }
-
-    return std::vector<std::string>();
-}
-
-
-void NFJsScriptModule::RemoveCallBackAsServer(const int msgID)
-{
-	m_pNetModule->RemoveReceiveCallBack(msgID);
-}
-
-void NFJsScriptModule::AddMsgCallBackAsServer(const int msgID, const LuaIntf::LuaRef & luaTable, const LuaIntf::LuaRef & luaFunc)
-{
-	auto funcNameList = mxNetMsgCallBackFuncMapAsServer.GetElement(msgID);
-	if (!funcNameList)
-	{
-		funcNameList = new NFList<string>();
-		mxNetMsgCallBackFuncMapAsServer.AddElement(msgID, funcNameList);
-
-		m_pNetModule->AddReceiveCallBack(msgID, this, &NFJsScriptModule::OnNetMsgCallBackAsServer);
-	}
-
-	std::string funcName = FindFuncName(luaTable, luaFunc);
-	if (!funcName.empty())
-	{
-		if (!funcNameList->Find(funcName))
-		{
-			funcNameList->Add(funcName);
-		}
-	}
-}
-
-void NFJsScriptModule::RemoveMsgCallBackAsClient(const NF_SERVER_TYPES serverType, const int msgID)
-{
-	m_pNetClientModule->RemoveReceiveCallBack(serverType, msgID);
-}
-
-void NFJsScriptModule::AddMsgCallBackAsClient(const NF_SERVER_TYPES serverType, const int msgID, const LuaIntf::LuaRef & luaTable, const LuaIntf::LuaRef & luaFunc)
-{
-	auto serverMap = mxNetMsgCallBackFuncMapAsClient.GetElement(serverType);
-	if (!serverMap)
-	{
-		serverMap = new NFMap<int, NFList<std::string>>();
-		mxNetMsgCallBackFuncMapAsClient.AddElement(serverType, serverMap);
-	}
-
-	auto funcNameList = serverMap->GetElement(msgID);
-	if (!funcNameList)
-	{
-		funcNameList = new NFList<string>();
-		serverMap->AddElement(msgID, funcNameList);
-
-		switch (serverType)
-		{
-			case NF_SERVER_TYPES::NF_ST_MASTER:
-				m_pNetClientModule->AddReceiveCallBack(serverType, msgID, this, &NFJsScriptModule::OnNetMsgCallBackAsClientForMasterServer);
-				break;
-			case NF_SERVER_TYPES::NF_ST_WORLD:
-				m_pNetClientModule->AddReceiveCallBack(serverType, msgID, this, &NFJsScriptModule::OnNetMsgCallBackAsClientForWorldServer);
-				break;
-			case NF_SERVER_TYPES::NF_ST_GAME:
-				m_pNetClientModule->AddReceiveCallBack(serverType, msgID, this, &NFJsScriptModule::OnNetMsgCallBackAsClientForGameServer);
-				break;
-			default:
-				break;
-		}
-
-	}
-
-	std::string funcName = FindFuncName(luaTable, luaFunc);
-	if (!funcName.empty())
-	{
-		if (!funcNameList->Find(funcName))
-		{
-			funcNameList->Add(funcName);
-		}
-	}
-}
 
 void NFJsScriptModule::ImportProtoFile(const std::string& fileName)
 {
@@ -377,88 +259,6 @@ v8::Local<v8::Value> NFJsScriptModule::Decode(const std::string& msgTypeName, co
 	return p->Decode(msgTypeName, data);
 }
 
-void NFJsScriptModule::SendToServerByServerID(const int serverID, const uint16_t msgID, const std::string& data)
-{
-    if (pPluginManager->GetAppID() == serverID)
-    {
-        m_pLogModule->LogError("you can send message to yourself");
-        return;
-    }
-
-	m_pNetClientModule->SendByServerID(serverID, msgID, data);
-}
-
-void NFJsScriptModule::SendToServerBySuit(const NF_SERVER_TYPES eType, const uint16_t msgID, const std::string & data, const std::string& hash)
-{
-	m_pNetClientModule->SendBySuitWithOutHead(eType, hash, msgID,data );
-}
-
-void NFJsScriptModule::SendToAllServerByServerType(const NF_SERVER_TYPES eType, const uint16_t msgID, const std::string &data)
-{
-	m_pNetClientModule->SendToAllServer(eType, msgID,data );
-}
-
-void NFJsScriptModule::SendMsgToClientByFD(const NFSOCK fd, const uint16_t msgID, const std::string &data)
-{
-	//for all servers
-	m_pNetModule->SendMsgWithOutHead(msgID, data, fd);
-}
-
-void NFJsScriptModule::SendMsgToPlayer(const NFGUID player, const uint16_t msgID, const std::string& data)
-{
-    //the app must be the game server
-	if (pPluginManager->GetAppType() == NF_SERVER_TYPES::NF_ST_GAME)
-	{
-
-	}
-	else if (pPluginManager->GetAppType() == NF_SERVER_TYPES::NF_ST_WORLD)
-	{
-
-	}
-	else if (pPluginManager->GetAppType() == NF_SERVER_TYPES::NF_ST_PROXY)
-	{
-	}
-	else
-	{
-		m_pLogModule->LogError("you are not: NF_ST_GAME || NF_ST_WORLD");
-	}
-}
-
-void NFJsScriptModule::SendToGroupPlayer(const uint16_t msgID, const std::string& data)
-{
-    //the app must be the game server
-	if (pPluginManager->GetAppType() == NF_SERVER_TYPES::NF_ST_GAME)
-	{
-
-	}
-	else
-	{
-		m_pLogModule->LogError("you are not an game server");
-	}
-}
-
-void NFJsScriptModule::SendToAllPlayer(const uint16_t msgID, const std::string& data)
-{
-	//if game server
-	//if world server
-	//if proxy server
-	if (pPluginManager->GetAppType() == NF_SERVER_TYPES::NF_ST_GAME)
-	{
-	}
-	else if (pPluginManager->GetAppType() == NF_SERVER_TYPES::NF_ST_WORLD)
-	{
-	}
-	else if (pPluginManager->GetAppType() == NF_SERVER_TYPES::NF_ST_PROXY)
-	{
-		m_pNetModule->SendMsgToAllClientWithOutHead(msgID, data);
-	}
-	else
-	{
-		m_pLogModule->LogError("you are not an game server or world server");
-	}
-}
-
-
 
 void NFJsScriptModule::SetVersionCode(const std::string& logData)
 {
@@ -468,170 +268,6 @@ void NFJsScriptModule::SetVersionCode(const std::string& logData)
 const std::string&  NFJsScriptModule::GetVersionCode()
 {
     return strVersionCode;
-}
-
-
-
-std::string NFJsScriptModule::FindFuncName(const LuaIntf::LuaRef & luaTable, const LuaIntf::LuaRef & luaFunc)
-{
-	if (luaTable.isTable() && luaFunc.isFunction())
-	{
-		std::string strLuaTableName = "";
-		std::map<std::string, LuaIntf::LuaRef>::iterator it = mxTableName.begin();
-		for (it; it != mxTableName.end(); ++it)
-		{
-			if (it->second == luaTable)
-			{
-				strLuaTableName = it->first;
-			}
-		}
-		
-		if (!strLuaTableName.empty())
-		{
-			for (auto itr = luaTable.begin(); itr != luaTable.end(); ++itr)
-			{
-				const LuaIntf::LuaRef& key = itr.key();
-
-				const std::string& sKey = key.toValue<std::string>();
-				const LuaIntf::LuaRef& val = itr.value();
-				if (val.isFunction() && luaFunc.isFunction() && val == luaFunc)
-				{
-					strLuaTableName.append(".");
-					strLuaTableName.append(sKey);
-					return strLuaTableName;
-				}
-			}
-		}
-	}
-
-	return NULL_STR;
-}
-
-void NFJsScriptModule::OnNetMsgCallBackAsServer(const NFSOCK sockIndex, const int msgID, const char *msg, const uint32_t len)
-{
-	auto msgCallBack = mxNetMsgCallBackFuncMapAsServer.GetElement(msgID);
-	if (msgCallBack)
-	{
-		std::string msgData(msg, len);
-		std::string funcName;
-		auto Ret = msgCallBack->First(funcName);
-		while (Ret)
-		{
-			try
-			{
-				LuaIntf::LuaRef func(mLuaContext, funcName.c_str());
-				func.call<LuaIntf::LuaRef>("", sockIndex, msgID, msgData);
-			}
-			catch (LuaIntf::LuaException& e)
-			{
-				cout << e.what() << endl;
-			}
-			catch (...)
-			{
-			}
-
-			Ret = msgCallBack->Next(funcName);
-		}
-	}
-}
-
-void NFJsScriptModule::OnNetMsgCallBackAsClientForMasterServer(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len)
-{
-	auto serverData = mxNetMsgCallBackFuncMapAsClient.GetElement(NF_SERVER_TYPES::NF_ST_MASTER);
-	if (serverData)
-	{
-		auto msgCallBack = serverData->GetElement(msgID);
-		if (msgCallBack)
-		{
-			std::string msgData(msg, len);
-
-			std::string funcName;
-			auto Ret = msgCallBack->First(funcName);
-			while (Ret)
-			{
-				try
-				{
-					LuaIntf::LuaRef func(mLuaContext, funcName.c_str());
-					func.call<LuaIntf::LuaRef>("", sockIndex, msgID, msgData);
-				}
-				catch (LuaIntf::LuaException& e)
-				{
-					cout << e.what() << endl;
-				}
-				catch (...)
-				{
-				}
-
-				Ret = msgCallBack->Next(funcName);
-			}
-		}
-	}
-}
-
-void NFJsScriptModule::OnNetMsgCallBackAsClientForWorldServer(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len)
-{
-	auto serverData = mxNetMsgCallBackFuncMapAsClient.GetElement(NF_SERVER_TYPES::NF_ST_WORLD);
-	if (serverData)
-	{
-		auto msgCallBack = serverData->GetElement(msgID);
-		if (msgCallBack)
-		{
-			std::string msgData(msg, len);
-
-			std::string funcName;
-			auto Ret = msgCallBack->First(funcName);
-			while (Ret)
-			{
-				try
-				{
-					LuaIntf::LuaRef func(mLuaContext, funcName.c_str());
-					func.call<LuaIntf::LuaRef>("", sockIndex, msgID, msgData);
-				}
-				catch (LuaIntf::LuaException& e)
-				{
-					cout << e.what() << endl;
-				}
-				catch (...)
-				{
-				}
-
-				Ret = msgCallBack->Next(funcName);
-			}
-		}
-	}
-}
-
-void NFJsScriptModule::OnNetMsgCallBackAsClientForGameServer(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len)
-{
-	auto serverData = mxNetMsgCallBackFuncMapAsClient.GetElement(NF_SERVER_TYPES::NF_ST_GAME);
-	if (serverData)
-	{
-		auto msgCallBack = serverData->GetElement(msgID);
-		if (msgCallBack)
-		{
-			std::string msgData(msg, len);
-
-			std::string funcName;
-			auto Ret = msgCallBack->First(funcName);
-			while (Ret)
-			{
-				try
-				{
-					LuaIntf::LuaRef func(mLuaContext, funcName.c_str());
-					func.call<LuaIntf::LuaRef>("", sockIndex, msgID, msgData);
-				}
-				catch (LuaIntf::LuaException& e)
-				{
-					cout << e.what() << endl;
-				}
-				catch (...)
-				{
-				}
-
-				Ret = msgCallBack->Next(funcName);
-			}
-		}
-	}
 }
 
 NFJsScriptModule::NFJsScriptModule(const std::string& NFDataCfgPath,const std::string& ScriptRoot): NFJsScriptModule( std::make_shared<DefaultJSModuleLoader>(NFDataCfgPath,ScriptRoot), -1, nullptr, nullptr, nullptr)
@@ -1340,12 +976,22 @@ void NFJsScriptModule::SetFTickerDelegate(const v8::FunctionCallbackInfo<v8::Val
     tickDelegateInfo->DelegateHandleCleaner = DelegateHandleCleaner;
 
     NFGUID* tdhandle = new NFGUID();
-    m_pScheduleModule->AddSchedule(*tdhandle, "JsTimeOutTick", this, &NFJsScriptModule::OnTimeOutHeartBeatCB, Delay, 1);
+    m_pScheduleModule->AddSchedule(*tdhandle, "JsTimeOutTick", this, &NFJsScriptModule::OnTimeOutHeartBeatCB, Delay, Continue?-1:1);
 
     // TODO - 如果实现多线程，这里应该加锁阻止定时回调的执行，直到DelegateWrapper设置好handle
     TickerDelegateHandleMap[tdhandle] = tickDelegateInfo;
 
     Info.GetReturnValue().Set(v8::External::New(Info.GetIsolate(), tdhandle));
+}
+
+NFJsScriptModule::DelegateInfo* NFJsScriptModule::FindDelegate(const NFGUID& self)
+{
+	auto Iterator = std::find_if(DelegateHandleMap.begin(), DelegateHandleMap.end(), [&](auto& Pair) { return Pair.first == self; });
+    if (Iterator != DelegateHandleMap.end())
+    {
+        return Iterator->second;
+    }
+	return  nullptr;
 }
 
 void NFJsScriptModule::ReportExecutionException(v8::Isolate* Isolate, v8::TryCatch* TryCatch, std::function<void(const JSError*)> CompletionHandler)

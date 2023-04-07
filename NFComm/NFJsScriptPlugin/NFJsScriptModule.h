@@ -109,7 +109,35 @@ public:
     virtual bool AfterInit();
     virtual bool BeforeShut();
 
+private:
 
+    struct  TickDelegateInfo
+    {
+        v8::Isolate *Isolate;
+        v8::Global<v8::Context> DefaultContext;
+        v8::Global<v8::Function> DefaultFunction;
+        std::function<void(v8::Isolate*,v8::TryCatch*)> exceptionHandler;
+        std::function<void(NFGUID*)> DelegateHandleCleaner;
+        bool FunctionContinue;
+        bool IsCalling;
+
+        TickDelegateInfo(){
+        }
+    };
+    std::map<NFGUID*,TickDelegateInfo*> TickerDelegateHandleMap; 
+
+    struct DelegateInfo
+    {
+        v8::Isolate *Isolate;
+        v8::Global<v8::Context> DefaultContext;
+        v8::Global<v8::Function> DefaultFunction;
+        std::function<void(v8::Isolate*,v8::TryCatch*)> exceptionHandler;
+        std::function<void(NFGUID*)> DelegateHandleCleaner;
+        bool IsCalling;
+        DelegateInfo(){
+        }
+    };
+    std::map<NFGUID*,DelegateInfo*> DelegateHandleMap;
 protected:
 
 
@@ -118,12 +146,8 @@ protected:
 	bool EnterScene(const int sceneID, const int groupID);
 	bool DoEvent(const NFGUID& self, const int eventID, const NFDataList& arg);
 
-
-	bool AddPropertyCallBack(const NFGUID& self, std::string& propertyName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
-    bool AddRecordCallBack(const NFGUID& self, std::string& recordName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
+    DelegateInfo* FindDelegate(const NFGUID& self);
     bool AddEventCallBack(const NFGUID& self, const int eventID, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
-	bool AddSchedule(const NFGUID& self, std::string& strHeartBeatName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc, const float time, const int count);
-	bool AddModuleSchedule(std::string& strHeartBeatName, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc, const float time, const int count);
 
 
 	NFINT64 GetNowTime();
@@ -131,19 +155,8 @@ protected:
 	NFINT64 APPId();
 	NFINT64 APPType();
 
-	//FOR ELEMENT MODULE
-	bool ExistElementObject(const std::string& configName);
-	std::vector<std::string> GetEleList(const std::string& className);
 
 
-	//FOR NET MODULE
-	//as server
-	void RemoveCallBackAsServer(const int msgID);
-	void AddMsgCallBackAsServer(const int msgID, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
-
-	//as client
-	void RemoveMsgCallBackAsClient(const NF_SERVER_TYPES serverType, const int msgID);
-	void AddMsgCallBackAsClient(const NF_SERVER_TYPES serverType, const int msgID, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
 
 
 
@@ -151,46 +164,18 @@ protected:
     const std::string Encode(const std::string& msgTypeName, const v8::Local<v8::Value>& v8Value);
 	v8::Local<v8::Value> Decode(const std::string& msgTypeName, const std::string& data);
 
-	void SendToServerByServerID(const int serverID, const uint16_t msgID, const std::string& data);
-	void SendToServerBySuit(const NF_SERVER_TYPES eType, const uint16_t msgID, const std::string& data, const std::string& hash);
-	void SendToAllServerByServerType(const NF_SERVER_TYPES eType, const uint16_t msgID, const std::string& data);
-
-    //for net module
-	void SendMsgToClientByFD(const NFSOCK fd, const uint16_t msgID, const std::string& data);
-
-	void SendMsgToPlayer(const NFGUID player, const uint16_t msgID, const std::string& data);
-	void SendToAllPlayer(const uint16_t msgID, const std::string& data);
-    void SendToGroupPlayer(const uint16_t msgID, const std::string& data);
-
-
     //hot fix
 	void SetVersionCode(const std::string& logData);
 	const std::string& GetVersionCode();
 
-	//FOR CLASS MODULE
-    bool AddClassCallBack(std::string& className, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
 
 protected:
     template<typename T>
     bool AddLuaFuncToMap(NFMap<T, NFMap<NFGUID, NFList<string>>>& funcMap, const NFGUID& self, T key, std::string& luaFunc);
 
-    template<typename T>
-    bool AddLuaFuncToMap(NFMap<T, NFMap<NFGUID, NFList<string>>>& funcMap, T key, std::string& luaFunc);
-
-    int OnLuaPropertyCB(const NFGUID& self, const std::string& propertyName, const NFData& oldVar, const NFData& newVar, const NFINT64 reason);
-    int OnLuaRecordCB(const NFGUID& self, const RECORD_EVENT_DATA& eventData, const NFData& oldVar, const NFData& newVar);
+   
     int OnTimeOutHeartBeatCB(const NFGUID& self, const std::string& strHeartBeatName, const float time, const int count);
-
     int OnLuaEventCB(const NFGUID& self, const int eventID, const NFDataList& argVar);
-
-    int OnClassEventCB(const NFGUID& self, const std::string& className, const CLASS_OBJECT_EVENT classEvent, const NFDataList& var);
-    
-	void OnScriptReload();
-
-	void OnNetMsgCallBackAsServer(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len);
-	void OnNetMsgCallBackAsClientForMasterServer(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len);
-	void OnNetMsgCallBackAsClientForWorldServer(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len);
-	void OnNetMsgCallBackAsClientForGameServer(const NFSOCK sockIndex, const int msgID, const char* msg, const uint32_t len);
 
 protected:
     NFIElementModule* m_pElementModule;
@@ -350,34 +335,8 @@ private:
 
     puerts::FCppObjectMapper CppObjectMapper;
     
-    struct  TickDelegateInfo
-    {
-        v8::Isolate *Isolate;
-        v8::Global<v8::Context> DefaultContext;
-        v8::Global<v8::Function> DefaultFunction;
-        std::function<void(v8::Isolate*,v8::TryCatch*)> exceptionHandler;
-        std::function<void(NFGUID*)> DelegateHandleCleaner;
-        bool FunctionContinue;
-        bool IsCalling;
 
-        TickDelegateInfo(){
-        }
-    };
-    std::map<NFGUID*,TickDelegateInfo*> TickerDelegateHandleMap; 
-    struct DelegateObjectInfo
-    {
-        v8::Isolate *Isolate;
-        v8::Global<v8::Context> DefaultContext;
-        v8::Global<v8::Function> DefaultFunction;
-        std::function<void(v8::Isolate*,v8::TryCatch*)> exceptionHandler;
-        std::function<void(NFGUID*)> DelegateHandleCleaner;
-        bool FunctionContinue;
-        bool IsCalling;
-
-        DelegateObjectInfo(){
-        }
-    };
-    std::map<void*,DelegateObjectInfo> DelegateMap;
+    
     
     
 
