@@ -43,166 +43,6 @@ V8_INLINE void LinkOuterImpl(v8::Local<v8::Context> Context, v8::Local<v8::Value
 #endif
 }
 
-#if USING_IN_UNREAL_ENGINE
-FORCEINLINE UScriptStruct* GetScriptStructInCoreUObject(const TCHAR* Name)
-{
-    static UPackage* CoreUObjectPkg = FindObjectChecked<UPackage>(nullptr, TEXT("/Script/CoreUObject"));
-    return FindObjectChecked<UScriptStruct>(CoreUObjectPkg, Name);
-}
-
-template <class T, typename Enable = void>
-struct TScriptStructTraits
-{
-};
-
-template <>
-struct TScriptStructTraits<FVector>
-{
-    static UScriptStruct* Get()
-    {
-        return TBaseStructure<FVector>::Get();
-    }
-};
-
-template <>
-struct TScriptStructTraits<FVector2D>
-{
-    static UScriptStruct* Get()
-    {
-        return TBaseStructure<FVector2D>::Get();
-    }
-};
-
-template <>
-struct TScriptStructTraits<FVector4>
-{
-    static UScriptStruct* Get()
-    {
-        return TBaseStructure<FVector4>::Get();
-    }
-};
-
-template <>
-struct TScriptStructTraits<FRotator>
-{
-    static UScriptStruct* Get()
-    {
-        return TBaseStructure<FRotator>::Get();
-    }
-};
-
-template <>
-struct TScriptStructTraits<FQuat>
-{
-    static UScriptStruct* Get()
-    {
-        return TBaseStructure<FQuat>::Get();
-    }
-};
-
-template <>
-struct TScriptStructTraits<FTransform>
-{
-    static UScriptStruct* Get()
-    {
-        return TBaseStructure<FTransform>::Get();
-    }
-};
-
-template <>
-struct TScriptStructTraits<FLinearColor>
-{
-    static UScriptStruct* Get()
-    {
-        return TBaseStructure<FLinearColor>::Get();
-    }
-};
-
-template <>
-struct TScriptStructTraits<FColor>
-{
-    static UScriptStruct* Get()
-    {
-        return TBaseStructure<FColor>::Get();
-    }
-};
-
-template <>
-struct TScriptStructTraits<FGuid>
-{
-    static UScriptStruct* Get()
-    {
-        return TBaseStructure<FGuid>::Get();
-    }
-};
-
-template <>
-struct TScriptStructTraits<FBox2D>
-{
-    static UScriptStruct* Get()
-    {
-        return TBaseStructure<FBox2D>::Get();
-    }
-};
-
-template <>
-struct TScriptStructTraits<FIntPoint>
-{
-    static UScriptStruct* Get()
-    {
-        return GetScriptStructInCoreUObject(TEXT("IntPoint"));
-    }
-};
-
-template <>
-struct TScriptStructTraits<FIntVector>
-{
-    static UScriptStruct* Get()
-    {
-        return GetScriptStructInCoreUObject(TEXT("IntVector"));
-    }
-};
-
-template <>
-struct TScriptStructTraits<FPlane>
-{
-    static UScriptStruct* Get()
-    {
-        return GetScriptStructInCoreUObject(TEXT("Plane"));
-    }
-};
-
-template <class...>
-using ToVoid = void;
-
-template <typename T, typename = void>
-struct HasStaticStructHelper : std::false_type
-{
-};
-
-template <typename T>
-struct HasStaticStructHelper<T, ToVoid<decltype(&T::StaticStruct)>> : std::true_type
-{
-};
-
-template <typename T>
-struct TScriptStructTraits<T, typename std::enable_if<HasStaticStructHelper<T>::value>::type>
-{
-    static UScriptStruct* Get()
-    {
-        return T::StaticStruct();
-    }
-};
-
-template <typename T, typename FT>
-struct TOuterLinker<T, FT, ToVoid<decltype(&TScriptStructTraits<FT>::Get)>>
-{
-    V8_INLINE static void Link(v8::Local<v8::Context> Context, v8::Local<v8::Value> Outer, v8::Local<v8::Value> Inner)
-    {
-        LinkOuterImpl(Context, Outer, Inner);
-    }
-};
-#endif
 
 class JSENV_API DataTransfer
 {
@@ -253,8 +93,13 @@ public:
         return static_cast<T*>(Isolate->GetData(MAPPER_ISOLATE_DATA_POS));
     }
 
-    static v8::Local<v8::Value> FindOrAddCData(
-        v8::Isolate* Isolate, v8::Local<v8::Context> Context, const void* TypeId, const void* Ptr, bool PassByPointer);
+    static v8::Local<v8::Value> FindOrAddCData(v8::Isolate* Isolate, v8::Local<v8::Context> Context, const void* TypeId, const void* Ptr, bool PassByPointer);
+
+    template <typename T>
+    static bool IsInstanceOf(v8::Isolate* Isolate, v8::Local<v8::Object> JsObject)
+    {
+        IsInstanceOf(Isolate,&typeid(T),JsObject);
+    };
 
     static bool IsInstanceOf(v8::Isolate* Isolate, const void* TypeId, v8::Local<v8::Object> JsObject);
 
@@ -262,37 +107,6 @@ public:
 
     static void UpdateRef(v8::Isolate* Isolate, v8::Local<v8::Value> Outer, const v8::Local<v8::Value>& Value);
 
-#if USING_IN_UNREAL_ENGINE
-    template <typename T>
-    static v8::Local<v8::Value> FindOrAddObject(v8::Isolate* Isolate, v8::Local<v8::Context>& Context, T* UEObject)
-    {
-        return FindOrAddObject(Isolate, Context, UEObject == nullptr ? T::StaticClass() : UEObject->GetClass(), UEObject);
-    }
-
-    static v8::Local<v8::Value> FindOrAddObject(
-        v8::Isolate* Isolate, v8::Local<v8::Context>& Context, UClass* Class, UObject* UEObject);
-
-    template <typename T>
-    static v8::Local<v8::Value> FindOrAddStruct(v8::Isolate* Isolate, v8::Local<v8::Context> Context, void* Ptr, bool PassByPointer)
-    {
-        return FindOrAddStruct(Isolate, Context, TScriptStructTraits<T>::Get(), Ptr, PassByPointer);
-    }
-
-    static v8::Local<v8::Value> FindOrAddStruct(
-        v8::Isolate* Isolate, v8::Local<v8::Context> Context, UScriptStruct* ScriptStruct, void* Ptr, bool PassByPointer);
-
-    template <typename T>
-    static bool IsInstanceOf(v8::Isolate* Isolate, v8::Local<v8::Object> JsObject)
-    {
-        return IsInstanceOf(Isolate, TScriptStructTraits<T>::Get(), JsObject);
-    }
-
-    static bool IsInstanceOf(v8::Isolate* Isolate, UStruct* Struct, v8::Local<v8::Object> JsObject);
-
-    static FString ToFString(v8::Isolate* Isolate, v8::Local<v8::Value> Value);
-
-    static void ThrowException(v8::Isolate* Isolate, const char* Message);
-#endif
 
     template <typename T1, typename T2>
     FORCEINLINE static void LinkOuter(v8::Local<v8::Context> Context, v8::Local<v8::Value> Outer, v8::Local<v8::Value> Inner)

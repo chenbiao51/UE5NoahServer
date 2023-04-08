@@ -1,17 +1,18 @@
 #include "V8Utils.h"
 #include "JSClassRegister.h"
 #include "CppObjectMapper.h"
+#include "NFComm/NFCore/NFVector2.hpp"
 #include "NFComm/NFPluginModule/NFIKernelModule.h"
 
 using namespace puerts;
 
-static void * _NFDataListNew_(const v8::FunctionCallbackInfo<v8::Value>& Info)
+static void *_NFDataNew_(const v8::FunctionCallbackInfo<v8::Value> &Info)
 {
     v8::Isolate *Isolate = Info.GetIsolate();
     v8::Local<v8::Context> Context = Isolate->GetCurrentContext();
     if (Info.Length() == 0)
     {
-        NFDataList *Obj = new NFDataList();
+        NFData *Obj = new NFData();
         return Obj;
     }
 
@@ -62,24 +63,25 @@ static void * _NFDataListNew_(const v8::FunctionCallbackInfo<v8::Value>& Info)
     return nullptr;
 }
 
-static void _NFDataListDelete_(void * Ptr)
+static void _NFDataDelete_(void *Ptr)
 {
-    NFDataList* Self = static_cast<NFDataList*>(Ptr);
+    NFData* Self = static_cast<NFData*>(Ptr);
     delete Self;
 }
 
-struct AutoRegisterForNFDataList
+struct AutoRegisterForNFData
 {
-    AutoRegisterForNFDataList()
+    AutoRegisterForNFData()
     {
         puerts::JSClassDefinition Def = JSClassEmptyDefinition;
+
         static puerts::JSPropertyInfo Properties[] = {};
         static puerts::JSFunctionInfo Methods[] = {};
         static puerts::JSFunctionInfo Functions[] = {};
 
-        Def.UETypeName = "NFDataList";
-        Def.Initialize = _NFDataListNew_;
-        Def.Finalize = _NFDataListDelete_;
+        Def.UETypeName = "NFData";
+        Def.Initialize = _NFDataNew_;
+        Def.Finalize = _NFDataDelete_;
         Def.Properties = Properties;
         Def.Methods = Methods;
         Def.Functions = Functions;
@@ -87,5 +89,4 @@ struct AutoRegisterForNFDataList
     }
 };
 
-
-AutoRegisterForNFDataList _AutoRegisterForNFDataList_;
+AutoRegisterForNFData _AutoRegisterForNFData_;

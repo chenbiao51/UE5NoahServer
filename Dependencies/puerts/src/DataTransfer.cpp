@@ -21,6 +21,7 @@ v8::Local<v8::Value> DataTransfer::FindOrAddCData(
         Isolate, Context, TypeId, const_cast<void*>(Ptr), PassByPointer);
 }
 
+
 bool DataTransfer::IsInstanceOf(v8::Isolate* Isolate, const void* TypeId, v8::Local<v8::Object> JsObject)
 {
     return IsolateData<ICppObjectMapper>(Isolate)->IsInstanceOfCppObject(TypeId, JsObject);
@@ -48,32 +49,5 @@ void DataTransfer::UpdateRef(v8::Isolate* Isolate, v8::Local<v8::Value> Outer, c
     auto Ret = Outer->ToObject(Context).ToLocalChecked()->Set(Context, 0, Value);
 }
 
-#if USING_IN_UNREAL_ENGINE
-FString DataTransfer::ToFString(v8::Isolate* Isolate, v8::Local<v8::Value> Value)
-{
-    return FV8Utils::ToFString(Isolate, Value);
-}
 
-v8::Local<v8::Value> DataTransfer::FindOrAddObject(
-    v8::Isolate* Isolate, v8::Local<v8::Context>& Context, UClass* Class, UObject* UEObject)
-{
-    return FV8Utils::IsolateData<IObjectMapper>(Isolate)->FindOrAdd(Isolate, Context, Class, UEObject);
-}
-
-v8::Local<v8::Value> DataTransfer::FindOrAddStruct(
-    v8::Isolate* Isolate, v8::Local<v8::Context> Context, UScriptStruct* ScriptStruct, void* Ptr, bool PassByPointer)
-{
-    return FV8Utils::IsolateData<IObjectMapper>(Isolate)->FindOrAddStruct(Isolate, Context, ScriptStruct, Ptr, PassByPointer);
-}
-
-bool DataTransfer::IsInstanceOf(v8::Isolate* Isolate, UStruct* Struct, v8::Local<v8::Object> JsObject)
-{
-    return FV8Utils::IsolateData<IObjectMapper>(Isolate)->IsInstanceOf(Struct, JsObject);
-}
-
-void DataTransfer::ThrowException(v8::Isolate* Isolate, const char* Message)
-{
-    FV8Utils::ThrowException(Isolate, Message);
-}
-#endif
 }    // namespace puerts
