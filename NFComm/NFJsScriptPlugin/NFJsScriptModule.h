@@ -143,11 +143,12 @@ protected:
 
 
 	//return the group id
-	bool EnterScene(const int sceneID, const int groupID);
-	bool DoEvent(const NFGUID& self, const int eventID, const NFDataList& arg);
-
     EventInfo* FindDelegate(const NFGUID& self);
-    bool AddEventCallBack(const NFGUID& self, const int eventID, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
+	bool EnterScene(const int sceneID, const int groupID);
+
+	// bool DoEvent(const NFGUID& self, const int eventID, const NFDataList& arg);
+    // bool AddEventCallBack(const NFGUID& self, const int eventID, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc);
+    // int OnEventCB(const NFGUID& self, const int eventID, const NFDataList& argVar);
 
 
 	NFINT64 GetNowTime();
@@ -175,7 +176,7 @@ protected:
 
    
     int OnTimeOutHeartBeatCB(const NFGUID& self, const std::string& strHeartBeatName, const float time, const int count);
-    int OnLuaEventCB(const NFGUID& self, const int eventID, const NFDataList& argVar);
+    
 
 protected:
     NFIElementModule* m_pElementModule;
@@ -296,6 +297,11 @@ private:
     void SetInspectorCallback(const v8::FunctionCallbackInfo<v8::Value>& Info);
 
     void DispatchProtocolMessage(const v8::FunctionCallbackInfo<v8::Value>& Info);
+
+    void DoEvent(const v8::FunctionCallbackInfo<v8::Value>& Info);
+    void AddEventCallBack(const v8::FunctionCallbackInfo<v8::Value>& Info);
+    void RemoveEventCallBack(const v8::FunctionCallbackInfo<v8::Value>& Info);
+    int OnEventCB(const NFGUID& self, const int eventID, const NFDataList& argVar);
 public:
 
 private:

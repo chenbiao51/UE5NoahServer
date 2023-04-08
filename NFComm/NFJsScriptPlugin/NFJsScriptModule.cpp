@@ -107,7 +107,63 @@ bool NFJsScriptModule::EnterScene(const int sceneID, const int groupID)
 	return false;
 }
 
-bool NFJsScriptModule::DoEvent(const NFGUID & self, const int eventID, const NFDataList & arg)
+// bool NFJsScriptModule::DoEvent(const NFGUID & self, const int eventID, const NFDataList & arg)
+// {
+// 	m_pEventModule->DoEvent(self, (int)eventID, arg);
+
+// 	return true;
+// }
+
+// bool NFJsScriptModule::AddEventCallBack(const NFGUID& self, const int eventID, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc)
+// {
+// 	auto mDelegate = FindDelegate(self);
+// 	if (mDelegate==nullptr)
+// 	{
+// 		if (AddEventInfoToMap(mxJsEventCallBackFuncMap, self, (int)eventID, luaFuncName))
+// 		{
+// 			m_pEventModule->AddEventCallBack(self, eventID, this, &NFJsScriptModule::OnJsEventCB);
+// 		}
+
+// 		return false;
+// 	}
+// 	return false;
+// }
+
+// int NFJsScriptModule::OnJsEventCB(const NFGUID& self, const int eventID, const NFDataList& argVar)
+// {
+
+// 	auto funcList = mxLuaEventCallBackFuncMap.GetElement(eventID);
+// 	if (funcList)
+// 	{
+// 		auto funcNameList = funcList->GetElement(self);
+// 		if (funcNameList)
+// 		{
+// 			std::string funcName;
+// 			auto Ret = funcNameList->First(funcName);
+// 			while (Ret)
+// 			{
+// 				try
+// 				{
+// 					LuaIntf::LuaRef func(mLuaContext, funcName.c_str());
+// 					func.call<LuaIntf::LuaRef>("", self, eventID, (NFDataList&)argVar);
+// 				}
+// 				catch (LuaIntf::LuaException& e)
+// 				{
+// 					cout << e.what() << endl;
+// 				}
+// 				catch (...)
+// 				{
+// 				}
+
+// 				Ret = funcNameList->Next(funcName);
+// 			}
+// 		}
+// 	}
+
+//     return 0;
+// }
+
+void NFJsScriptModule::DoEvent(const v8::FunctionCallbackInfo<v8::Value>& Info)
 {
 	m_pEventModule->DoEvent(self, (int)eventID, arg);
 
@@ -115,16 +171,14 @@ bool NFJsScriptModule::DoEvent(const NFGUID & self, const int eventID, const NFD
 }
 
 
-
-
-bool NFJsScriptModule::AddEventCallBack(const NFGUID& self, const int eventID, const LuaIntf::LuaRef& luaTable, const LuaIntf::LuaRef& luaFunc)
+void NFJsScriptModule::RemoveEventCallBack(const v8::FunctionCallbackInfo<v8::Value>& Info)
 {
 	auto mDelegate = FindDelegate(self);
 	if (mDelegate==nullptr)
 	{
 		if (AddEventInfoToMap(mxJsEventCallBackFuncMap, self, (int)eventID, luaFuncName))
 		{
-			m_pEventModule->AddEventCallBack(self, eventID, this, &NFJsScriptModule::OnLuaEventCB);
+			m_pEventModule->AddEventCallBack(self, eventID, this, &NFJsScriptModule::OnEventCB);
 		}
 
 		return false;
@@ -132,7 +186,22 @@ bool NFJsScriptModule::AddEventCallBack(const NFGUID& self, const int eventID, c
 	return false;
 }
 
-int NFJsScriptModule::OnLuaEventCB(const NFGUID& self, const int eventID, const NFDataList& argVar)
+void NFJsScriptModule::AddEventCallBack(const v8::FunctionCallbackInfo<v8::Value>& Info)
+{
+	auto mDelegate = FindDelegate(self);
+	if (mDelegate==nullptr)
+	{
+		if (AddEventInfoToMap(mxJsEventCallBackFuncMap, self, (int)eventID, luaFuncName))
+		{
+			m_pEventModule->AddEventCallBack(self, eventID, this, &NFJsScriptModule::OnEventCB);
+		}
+
+		return false;
+	}
+	return false;
+}
+
+int NFJsScriptModule::OnEventCB(const NFGUID& self, const int eventID, const NFDataList& argVar)
 {
 
 	auto funcList = mxLuaEventCallBackFuncMap.GetElement(eventID);
@@ -165,6 +234,7 @@ int NFJsScriptModule::OnLuaEventCB(const NFGUID& self, const int eventID, const 
 
     return 0;
 }
+
 
 
 int NFJsScriptModule::OnTimeOutHeartBeatCB(const NFGUID& self, const std::string& strHeartBeatName, const float time, const int count)
@@ -440,6 +510,11 @@ exit_code = node::SpinEventLoop(NodeEnv).FromMaybe(1);
     MethodBindingHelper<&NFJsScriptModule::SetInterval>::Bind(Isolate, Context, Global, "setInterval", This);
 
     MethodBindingHelper<&NFJsScriptModule::ClearInterval>::Bind(Isolate, Context, Global, "clearInterval", This);
+
+    MethodBindingHelper<&NFJsScriptModule::DoEvent>::Bind(Isolate, Context, Global, "doEvent", This);
+    MethodBindingHelper<&NFJsScriptModule::AddEventCallBack>::Bind(Isolate, Context, Global, "addEventCallBack", This);
+    MethodBindingHelper<&NFJsScriptModule::RemoveEventCallBack>::Bind(Isolate, Context, Global, "removeEventCallBack", This);
+
 
     PuertsObj->Set(Context, FV8Utils::ToV8String(Isolate, "toCString"),
                 v8::FunctionTemplate::New(Isolate, ToCString)->GetFunction(Context).ToLocalChecked())
